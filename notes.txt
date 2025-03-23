@@ -1,0 +1,8 @@
+component structure:
+
+Synthesizer (not component)
+    Voice (not component)
+        Chain (not component)
+            Mixer
+                Gain
+                    Oscillator
