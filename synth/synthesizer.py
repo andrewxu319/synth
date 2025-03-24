@@ -30,7 +30,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.should_run = True
     
         # Set up the voices
-        signal_prototype = self.setup_signal_chain()
+        signal_prototype = self.set_up_signal_chain()
         self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
@@ -45,27 +45,28 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         return
     
     def message_handler(self, message: str):
-        match message: # receiving message as a STRING from midi_listener.py
+        match message.split(): # receiving message as a STRING from midi_listener.py
             case ["exit"]:
                 self.log.info("Got exit command.")
-                self.stream_player.quit()
+                self.stream_player.stop()
                 self.should_run = False
             case ["note_on", "-n", note, "-c", channel]:
                 int_note = int(note)
                 int_channel = int(channel)
                 note_name = midi.note_names[int_note]
                 self.note_on(int_note, int_channel)
-                self.log.info(f"Note on {note_name} ({int_note}), chan {chan}")
+                self.log.info(f"Note on {note_name} ({int_note}), chan {int_channel}")
             case ["note_off", "-n", note, "-c", channel]:
                 int_note = int(note)
                 int_channel = int(channel)
                 note_name = midi.note_names[int_note]
                 self.note_off(int_note, int_channel)
-                self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
+                self.log.info(f"Note off {note_name} ({int_note}), chan {int_channel}")
             case ["control_change", "-c", channel, "-n", cc_number, "-v", value]:
                 int_channel = int(channel)
                 int_cc_number = int(cc_number)
                 int_value = int(value)
+                self.control_change_handler(int_channel, int_cc_number, int_value)
             case _:
                 self.log.info(f"Unknown MIDI message: {message}")
     
@@ -90,6 +91,18 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[gain_a, gain_b, gain_c, gain_d, gain_noise])
         # parameters aren't defined here. PROBABLY taken elsewhere "synthesizer.signal_prototype.gain_b.amp = 0.8"
 
+        osc_a.active = True
+        osc_b.active = True
+        osc_c.active = True
+        osc_d.active = True
+        noise.active = False
+
+        gain_a.amp = 1.0
+        gain_b.amp = 0.2
+        gain_c.amp = 0.6
+        gain_d.amp = 0.5
+        noise.amp = 0.01
+
         return Chain(mixer) # top most component in the chain is mixer
 
     def generator(self):
@@ -104,7 +117,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                     mixed_next_chunk += next(voice.signal_chain)
                     num_active_voices += 1
             
-            mixed_next_chunk = np.clip(-1.0, 1.0)
+            mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk
             mixed_next_chunk = np.zeros(self.frames_per_chunk)
@@ -117,14 +130,15 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         note_id = self.get_note_id(note, channel)
         freq = midi.frequencies[note]
-        for i, voice in self.voices:
+        for i in range(len(self.voices)):
+            voice = self.voices[i]
             if not voice.active:
                 voice.note_on(freq, note_id)
                 self.voices.append(self.voices.pop(i))
                 break
         
             if i == len(self.voices) - 1:
-                self.logging.info("No unused voices! Dropped the voice in use for the longest.")
+                self.log.info("No unused voices! Dropped the voice in use for the longest.")
                 self.voices[0].note_off()
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
@@ -133,3 +147,15 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         Find the voice playing the given note and turn it off.
         """
+        note_id = self.get_note_id(note, channel)
+        for voice in self.voices:
+            if voice.active and voice.note_id == note_id:
+                voice.note_off()
+    
+    def get_note_id(self, note: int, channel: int):
+        """
+        Generate an id for a given note and channel
+        By hashing the note and channel we can ensure that we are turning off the exact note
+        that was turned on
+        """
+        return hash(f"{note}{channel}")

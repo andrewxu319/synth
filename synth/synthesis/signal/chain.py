@@ -66,10 +66,10 @@ class Chain:
         return components
 
     def note_on(self, frequency):
-        for osc in self in self.get_components_by_class(Oscillator):
+        for osc in self.get_components_by_class(Oscillator):
             osc.frequency = frequency
-        self._root_component.active = True
+        self.active = True
 
     def note_off(self):
         # Setting the root component active status should propagate down the tree
-        self._root_component.active = False # cuz only single voice
+        self.active = False # cuz only single voice
