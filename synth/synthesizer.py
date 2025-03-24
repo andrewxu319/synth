@@ -8,13 +8,15 @@ from copy import deepcopy
 import numpy as np
 
 from . import midi
+from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
-from .synthesis.signal.sine_wave_oscillator import SineWaveOscillator
-from .synthesis.signal.square_wave_oscillator import SquareWaveOscillator
-from .synthesis.signal.sawtooth_wave_oscillator import SawtoothWaveOscillator
-from .synthesis.signal.triangle_wave_oscillator import TriangleWaveOscillator
-from .synthesis.signal.noise_generator import NoiseGenerator
+from .synthesis.signal.oscillator_library import OscillatorLibrary
+# from .synthesis.signal.sine_wave_oscillator import SineWaveOscillator
+# from .synthesis.signal.square_wave_oscillator import SquareWaveOscillator
+# from .synthesis.signal.sawtooth_wave_oscillator import SawtoothWaveOscillator
+# from .synthesis.signal.triangle_wave_oscillator import TriangleWaveOscillator
+# from .synthesis.signal.noise_generator import NoiseGenerator
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
@@ -27,11 +29,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.frames_per_chunk = frames_per_chunk
         self.mailbox = mailbox
         self.num_voices = num_voices
+        self.osc_amp_vals = np.linspace(0, 1, 128)
         self.should_run = True
     
         # Set up the voices
         signal_prototype = self.set_up_signal_chain()
-        self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
+        # self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
         # Set up the stream player
@@ -72,36 +75,45 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def control_change_handler(self, channel: int, cc_number: int, value: int): # prob j change the volume? go to Chain, search by gain, multiply by value
         self.log.info(f"Control Change: channel {channel}, CC {cc_number}, value {value}")
-        # ADD MORE LATER
+        # match cc_number:
+        #     case Implementation.OSC_A_AMP:
+        #         self.set_gain(self, "a", gain)
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
-        osc_a = SineWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        osc_b = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        osc_c = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        osc_d = TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        noise = NoiseGenerator(self.sample_rate, self.frames_per_chunk)
+        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.frames_per_chunk)
+        self.oscillators = self.oscillator_library.oscillators
+        gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[oscillator], control_tag=f"gain_{name}") for name, oscillator in self.oscillators.items()]
+        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=gains)
+        
+        # Defines parameters
+        self.active_status = {
+            "sine_wave_oscillator": False,
+            "square_wave_oscillator": False,
+            "sawtooth_wave_oscillator": False,
+            "triangle_wave_oscillator": True,
+            "noise_oscillator": False
+        }
+        self.gain_status = {
+            "sine_wave_oscillator": 1.0,
+            "square_wave_oscillator": 1.0,
+            "sawtooth_wave_oscillator": 0.0,
+            "triangle_wave_oscillator": 1.0,
+            "noise_oscillator": 0.01
+        }
 
-        gain_a = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_a], control_tag="gain_a")
-        gain_b = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_b], control_tag="gain_b")
-        gain_c = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_c], control_tag="gain_c")
-        gain_d = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_d], control_tag="gain_d")
-        gain_noise = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[noise], control_tag="gain_noise")
+        # self.oscillator_library.oscillators["sine_wave_oscillator"].active = True
+        # print("HIHIHIHIHI" + str(self.oscillator_library.oscillators["sine_wave_oscillator"].active))
 
-        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[gain_a, gain_b, gain_c, gain_d, gain_noise])
-        # parameters aren't defined here. PROBABLY taken elsewhere "synthesizer.signal_prototype.gain_b.amp = 0.8"
+        for name, oscillator in self.oscillators.items():
+            oscillator.active = self.active_status[name]
+            # print(f"{oscillator.name} active is {oscillator.active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
+        for i in range(len(gains)):
+            gains[i].amplitude = self.gain_status[list(self.gain_status)[i]] # gain only has one subcomponent
 
-        osc_a.active = True
-        osc_b.active = True
-        osc_c.active = True
-        osc_d.active = True
-        noise.active = False
-
-        gain_a.amp = 1.0
-        gain_b.amp = 0.2
-        gain_c.amp = 0.6
-        gain_d.amp = 0.5
-        noise.amp = 0.01
+        # print(self.oscillators)
+        # for subcomp in mixer.subcomponents:
+        #     print(subcomp.subcomponents[0].active)
 
         return Chain(mixer) # top most component in the chain is mixer
 
@@ -142,6 +154,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.voices[0].note_off()
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
+        # print([voice if voice.active else "" for voice in self.voices]) # number of active voices
     
     def note_off(self, note: int, channel: int):
         """

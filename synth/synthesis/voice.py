@@ -12,6 +12,7 @@ class Voice:
     @active.setter
     def active(self, value):
         self.signal_chain.active = value
+        # print(f"Voice {self} active is {value}! Executed from voice.py, 14") # ACTIVE CHECK
     
     def note_on(self, frequency, note_id):
         self.note_id = note_id

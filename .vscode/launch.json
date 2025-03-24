@@ -23,7 +23,11 @@
             "type": "debugpy",
             "request": "launch",
             // "module": "$('mytest.')${file}"
-            "module": "project_test.${fileBasenameNoExtension}"
+            "module": "project_test.${fileBasenameNoExtension}",
+            "args": ["-m"],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/synth/"
+            }
         }
     ]
 }

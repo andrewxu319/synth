@@ -61,6 +61,7 @@ if __name__ == "__main__":
     synth_mailbox = queue.Queue()
 
     midi_listen_port = options.midi_port if options.midi_port else settings.auto_attach
+    midi_listen_port = available_ports[0] # !!!!!!
     log.info(f"Using MIDI port {midi_listen_port}")
     midi_listener = MidiListener(listener_mailbox, synth_mailbox, midi_listen_port)
     

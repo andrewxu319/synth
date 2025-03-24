@@ -66,9 +66,11 @@ class StreamPlayer:
                                                               rate = self.sample_rate,
                                                               output = True,
                                                               stream_callback = self.audio_callback,
-                                                              frames_per_buffer = self.frames_per_chunk)                                                            
+                                                              output_device_index = 4, # if headphones
+                                                              frames_per_buffer = self.frames_per_chunk)  
         self._output_stream.start_stream()
-    
+        logging.info(f"Default output device: {self.pyaudio_interface.get_default_output_device_info()}")
+
     def stop(self):
         """
         Stop the output stream

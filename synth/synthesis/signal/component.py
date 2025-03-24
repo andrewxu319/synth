@@ -87,10 +87,17 @@ class Component():
             bool_val = bool(value)
             self._active = bool_val
             for subcomponent in self.subcomponents: # !!!!!!!!!!
-                subcomponent.active = bool_val
+                # subcomponent.active = bool_val
+                # print("Oscillator" in subcomponent.name)
+                if "Oscillator" in subcomponent.name:
+                    print(f"Set active for {subcomponent} failed!")
+                #     # continue
+                else:
+                    subcomponent.active = bool_val
+                    # print(f"{subcomponent} active is {bool_val}! Executed from component.py, 90") # ACTIVE CHECK
         except ValueError:
             self.log.error(f"Couldn't set active with value {value}")
-    
+
     def get_subcomponents_str(self, component, depth):
         """
         Returns an indented string representing the tree of subcomponents
