@@ -79,7 +79,7 @@ class Oscillator(Generator):
         return self
 
     def __next__(self):
-        # print(f"Oscillator {self} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
+        print(f"Oscillator {self} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
         if self.active:
             # print(f"{self.name} active!")
             if self.frequency <= 0.0:
@@ -88,8 +88,8 @@ class Oscillator(Generator):
                 sample = np.zeros(self.frames_per_chunk)
 
             else:
-                sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
-                # sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+                # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+                sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
                 # print(list(sample))
             
             self._chunk_start_time = self._chunk_end_time

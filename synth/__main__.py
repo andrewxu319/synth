@@ -65,7 +65,7 @@ if __name__ == "__main__":
     log.info(f"Using MIDI port {midi_listen_port}")
     midi_listener = MidiListener(listener_mailbox, synth_mailbox, midi_listen_port)
     
-    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox)
+    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, device=settings.device)
     try: # our two threads
         midi_listener.start()
         synthesizer.start()

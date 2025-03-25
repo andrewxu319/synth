@@ -22,13 +22,14 @@ from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
 
 class Synthesizer(threading.Thread): # each synth in separate thread??
-    def __init__(self, sample_rate: int, frames_per_chunk: int, mailbox: Queue, num_voices: int=4) -> None: # mailbox = synth_mailbox
+    def __init__(self, sample_rate: int, frames_per_chunk: int, mailbox: Queue, num_voices: int=4, device=None) -> None: # mailbox = synth_mailbox
         super().__init__(name="Synthesizer Thread")
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.mailbox = mailbox
         self.num_voices = num_voices
+        self.device = device
         self.osc_amp_vals = np.linspace(0, 1, 128)
         self.should_run = True
     
@@ -38,7 +39,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
         # Set up the stream player
-        self.stream_player = StreamPlayer(self.sample_rate, self.frames_per_chunk, self.generator())
+        self.stream_player = StreamPlayer(self.sample_rate, self.frames_per_chunk, self.generator(), device=self.device)
     
     def run(self):
         self.stream_player.play()
@@ -83,23 +84,23 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # Defines components
         self.oscillator_library = OscillatorLibrary(self.sample_rate, self.frames_per_chunk)
         self.oscillators = self.oscillator_library.oscillators
-        gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[oscillator], control_tag=f"gain_{name}") for name, oscillator in self.oscillators.items()]
+        gains = [Gain(self.sample_rate, self.frames_per_chunk, 0.0, subcomponents=[oscillator], control_tag=f"gain_{name}") for name, oscillator in self.oscillators.items()]
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=gains)
         
         # Defines parameters
         self.active_status = {
             "sine_wave_oscillator": False,
             "square_wave_oscillator": False,
-            "sawtooth_wave_oscillator": False,
-            "triangle_wave_oscillator": True,
+            "sawtooth_wave_oscillator": True,
+            "triangle_wave_oscillator": False,
             "noise_oscillator": False
         }
-        self.gain_status = {
+        self.amplitude_status = {
             "sine_wave_oscillator": 1.0,
             "square_wave_oscillator": 1.0,
-            "sawtooth_wave_oscillator": 0.0,
+            "sawtooth_wave_oscillator": 0.01,
             "triangle_wave_oscillator": 1.0,
-            "noise_oscillator": 0.01
+            "noise_oscillator": 1.0
         }
 
         # self.oscillator_library.oscillators["sine_wave_oscillator"].active = True
@@ -107,9 +108,9 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
         for name, oscillator in self.oscillators.items():
             oscillator.active = self.active_status[name]
-            # print(f"{oscillator.name} active is {oscillator.active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
+            print(f"{oscillator.name} active is {oscillator.active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
         for i in range(len(gains)):
-            gains[i].amplitude = self.gain_status[list(self.gain_status)[i]] # gain only has one subcomponent
+            gains[i].amplitude = self.amplitude_status[list(self.amplitude_status)[i]] # gain only has one subcomponent
 
         # print(self.oscillators)
         # for subcomp in mixer.subcomponents:
@@ -132,7 +133,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk
-            mixed_next_chunk = np.zeros(self.frames_per_chunk)
+            mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
             num_active_voices = 0
     
     def note_on(self, note: int, channel: int):

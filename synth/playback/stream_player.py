@@ -2,11 +2,12 @@ import pyaudio
 import logging
 
 class StreamPlayer:
-    def __init__(self, sample_rate: int, frames_per_chunk: int, input_delegate):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, input_delegate, device=None):
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.input_delegate = input_delegate
+        self.device = device
         self.pyaudio_interface = pyaudio.PyAudio()
         self._output_stream = None
     
@@ -66,7 +67,7 @@ class StreamPlayer:
                                                               rate = self.sample_rate,
                                                               output = True,
                                                               stream_callback = self.audio_callback,
-                                                              output_device_index = 4, # if headphones
+                                                              output_device_index = self.device, # if headphones
                                                               frames_per_buffer = self.frames_per_chunk)  
         self._output_stream.start_stream()
         logging.info(f"Default output device: {self.pyaudio_interface.get_default_output_device_info()}")

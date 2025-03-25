@@ -39,7 +39,7 @@ class Chain:
     @active.setter
     def active(self, value):
         self._root_component.active = value
-        # print(f"Chain {self._root_component} active is {value}! Executed from chain.py, 40") # ACTIVE CHECK
+        print(f"Chain {self._root_component} active is {value}! Executed from chain.py, 40") # ACTIVE CHECK
     
     def get_components_by_class(self, cls): # cls = class
         components = []

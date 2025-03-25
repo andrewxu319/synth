@@ -94,7 +94,7 @@ class Component():
                 #     # continue
                 else:
                     subcomponent.active = bool_val
-                    # print(f"{subcomponent} active is {bool_val}! Executed from component.py, 90") # ACTIVE CHECK
+                    print(f"{subcomponent} active is {bool_val}! Executed from component.py, 90") # ACTIVE CHECK
         except ValueError:
             self.log.error(f"Couldn't set active with value {value}")
 
