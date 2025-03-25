@@ -35,9 +35,9 @@ class Gain(Component):
     def amp(self, value):
         try:
             float_value = float(value)
-            if float_value >= 0 and float_value <= 1.9:
-                self._amp = float_value
-            else:
+            if float_value > 1.0 or float_value < 0.0:
                 raise ValueError
+            else:
+                self._amp = float_value
         except ValueError:
             self.log.error(f"Gain must be between 0.0 and 1.0, got {value}")

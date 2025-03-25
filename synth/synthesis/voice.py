@@ -14,6 +14,7 @@ class Voice:
         self.signal_chain.active = value
     
     def note_on(self, frequency, note_id):
+        self._active = True
         self.note_id = note_id
         self.signal_chain.note_on(frequency)
     

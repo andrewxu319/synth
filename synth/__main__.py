@@ -1,10 +1,8 @@
 import logging
-from time import sleep
 import queue
 import sys
 from optparse import OptionParser
-
-import numpy as np
+from time import sleep
 
 from . import settings
 from .synthesizer import Synthesizer
@@ -60,7 +58,8 @@ if __name__ == "__main__":
     listener_mailbox = queue.Queue()
     synth_mailbox = queue.Queue()
 
-    midi_listen_port = options.midi_port if options.midi_port else settings.auto_attach
+    # midi_listen_port = options.midi_port if options.midi_port else settings.auto_attach
+    midi_listen_port = available_ports[0]
     log.info(f"Using MIDI port {midi_listen_port}")
     midi_listener = MidiListener(listener_mailbox, synth_mailbox, midi_listen_port)
     

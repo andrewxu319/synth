@@ -33,7 +33,7 @@ class Oscillator(Generator):
 
     def set_phase_degrees(self, degrees):
         try:
-            self._phase = degrees / 180 * np.pi
+            self.phase = degrees / 180 * np.pi
         except:
             self.log.error(f"Unable to set with value {degrees}")
 
@@ -45,7 +45,7 @@ class Oscillator(Generator):
         try:
             float_value = float(value)
             if float_value >= 0.0 and float_value <= 1.0:
-                self._amplitude = float(value)
+                self._amplitude = float_value
             else:
                 raise ValueError
         except:
@@ -57,8 +57,9 @@ class Oscillator(Generator):
     @active.setter
     def active(self, value):
         try:
-            self._active = bool(value)
-            self._frequency = 0.0 if not self._active else self._frequency
+            bool_value = bool(value)
+            self._active = bool_value
+            self.frequency = 0.0 if not bool_value else self.frequency
         except:
             self.log.error(f"Unable to set with value {value}")
 

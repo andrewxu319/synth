@@ -16,22 +16,22 @@ class SineWaveOscillator(Oscillator):
         return self
 
     def __next__(self):
-        if self.active == True:
-            if self.frequency <= 0.0:
-                if self.frequency < 0.0:
-                    self.log.error("Overriding negative frequency to 0")
-                sample = np.zeros(self.frames_per_chunk)
-
-            else:
-                sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
-
-            self._chunk_start_time = self._chunk_end_time
-            self._chunk_end_time += self._chunk_duration
-
-            return sample.astype(np.float32)
+        # if self.active:
+        if self.frequency <= 0.0:
+            if self.frequency < 0.0:
+                self.log.error("Overriding negative frequency to 0")
+            sample = np.zeros(self.frames_per_chunk)
 
         else:
-            return np.zeros(self.frames_per_chunk, dtype=np.float32)
+            sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+
+        self._chunk_start_time = self._chunk_end_time
+        self._chunk_end_time += self._chunk_duration
+
+        return sample.astype(np.float32)
+
+        # else:
+        #     return np.zeros(self.frames_per_chunk, dtype=np.float32)
 
     def __deepcopy__(self, memo):
         return SineWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SineWaveOscillator")

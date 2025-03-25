@@ -21,10 +21,10 @@ class Component():
 
     def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List["Component"]=[], name="Component", control_tag: str=""):
         self.log = logging.getLogger(__name__)
-        self._sample_rate = sample_rate
-        self._frames_per_chunk = frames_per_chunk
+        self.sample_rate = sample_rate
+        self.frames_per_chunk = frames_per_chunk
         self.subcomponents = subcomponents
-        self._active = False
+        self.active = False
         self.name = name + "#" + str(random.randint(0, 9999))
         self.control_tag = control_tag
 
@@ -49,10 +49,7 @@ class Component():
     def sample_rate(self, value):
         try:
             int_value = int(value)
-            if int_value > 0:
-                self._sample_rate = int_value
-            else:
-                raise ValueError
+            self._sample_rate = int_value
         except ValueError:
             self.log.error(f"Couldn't set sample_rate with value {value}")
 
@@ -64,10 +61,7 @@ class Component():
     def frames_per_chunk(self, value):
         try:
             int_value = int(value)
-            if int_value > 0:
-                self._frames_per_chunk = int_value
-            else:
-                raise ValueError
+            self._frames_per_chunk = int_value
         except ValueError:
             self.log.error(f"Couldn't set frames_per_chunk with value {value}")
 

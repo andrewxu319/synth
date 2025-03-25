@@ -32,7 +32,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # Set up the voices
         signal_prototype = self.set_up_signal_chain()
         self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
-        self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
+        self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(self.num_voices)]
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.frames_per_chunk, self.generator())
@@ -78,30 +78,30 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # Defines components
         osc_a = SineWaveOscillator(self.sample_rate, self.frames_per_chunk)
         osc_b = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        osc_c = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        osc_d = TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        noise = NoiseGenerator(self.sample_rate, self.frames_per_chunk)
+        # osc_c = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk)
+        # osc_d = TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk)
+        # noise = NoiseGenerator(self.sample_rate, self.frames_per_chunk)
 
         gain_a = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_a], control_tag="gain_a")
         gain_b = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_b], control_tag="gain_b")
-        gain_c = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_c], control_tag="gain_c")
-        gain_d = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_d], control_tag="gain_d")
-        gain_noise = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[noise], control_tag="gain_noise")
+        # gain_c = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_c], control_tag="gain_c")
+        # gain_d = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[osc_d], control_tag="gain_d")
+        # gain_noise = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[noise], control_tag="gain_noise")
 
-        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[gain_a, gain_b, gain_c, gain_d, gain_noise])
+        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[gain_a]) # ouch. shld have all gains
         # parameters aren't defined here. PROBABLY taken elsewhere "synthesizer.signal_prototype.gain_b.amp = 0.8"
 
-        osc_a.active = True
-        osc_b.active = True
-        osc_c.active = True
-        osc_d.active = True
-        noise.active = False
+        # print(osc_a.active)
+        # osc_b.active = False
+        # osc_c.active = False
+        # osc_d.active = False
+        # noise.active = False
 
-        gain_a.amp = 1.0
-        gain_b.amp = 0.2
-        gain_c.amp = 0.6
-        gain_d.amp = 0.5
-        noise.amp = 0.01
+        # gain_a.amp = 0.0
+        # gain_b.amp = 0.2
+        # gain_c.amp = 0.6
+        # gain_d.amp = 0.5
+        # noise.amp = 0.01
 
         return Chain(mixer) # top most component in the chain is mixer
 
@@ -112,15 +112,16 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
         num_active_voices = 0
         while True:
-            for voice in self.voices:
+            for i in range(self.num_voices):
+                voice = self.voices[i]
+                mixed_next_chunk += next(voice.signal_chain)
                 if voice.active:
-                    mixed_next_chunk += next(voice.signal_chain)
                     num_active_voices += 1
             
             mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk
-            mixed_next_chunk = np.zeros(self.frames_per_chunk)
+            mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
             num_active_voices = 0
     
     def note_on(self, note: int, channel: int):
