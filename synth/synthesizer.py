@@ -13,6 +13,7 @@ from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
 from .synthesis.signal.gain import Gain
+from .synthesis.signal.fx.low_pass_filter import LowPassFilter
 from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
 
@@ -93,14 +94,14 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.oscillator_library = OscillatorLibrary(self.sample_rate, self.frames_per_chunk)
         self.oscillators = self.oscillator_library.oscillators
         gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
-        # lpfs = [LowPassFilter(self.sample_rate, self.frames_per_chunk, subcomponents=[gains[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
-        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=gains)
+        lpfs = [LowPassFilter(self.sample_rate, self.frames_per_chunk, subcomponents=[gains[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
+        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=lpfs)
 
         # Defines parameters
         self.oscillator_active_status = [True, True, True, True, True]
-        self.amplitude_status = [1.0, 1.0, 1.0, 1.0, 1.0]
-        # self.lpf_active_status = [True, True, False, False, False]
-        # self.lpf_cutoff_status = [200, 200, 200, 200, 200]
+        self.amplitude_status = [1.0, 1.0, 1.0, 1.0, 0.0] # initial condition. implement settings saving later
+        self.lpf_active_status = [True, True, True, True, True]
+        self.lpf_cutoff_status = [200, 200, 200, 200, 200]
 
         for i in range(len(self.oscillators)):
             self.oscillators[i].active = self.oscillator_active_status[i]
@@ -108,7 +109,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
         for i in range(len(gains)):
             gains[i].amplitude = self.amplitude_status[i] # gain only has one subcomponent
-
+        for i in range(len(lpfs)):
+            lpfs[i].active = self.lpf_active_status[i]
+            lpfs[i].cutoff_frequency = self.lpf_cutoff_status[i]
+            logging.info(f"LPF FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff_frequency}")
 
         return Chain(mixer) # top most component in the chain is mixer
 
