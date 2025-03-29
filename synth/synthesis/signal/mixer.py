@@ -20,4 +20,20 @@ class Mixer(Component):
         return mixed_signal.astype(np.float32)
 
     def __deepcopy__(self, memo):
-        return Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(component, memo) for component in self.subcomponents], name=self.name)
+        copy = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(component, memo) for component in self.subcomponents], name=self.name)
+        copy.active = self.active
+        return copy
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        try:
+            bool_val = bool(value)
+            self._active = bool_val
+            for subcomponent in self.subcomponents: # !!!!!!!!!!
+                subcomponent.active = bool_val
+        except ValueError:
+            self.log.error(f"Couldn't set active with value {value}")

@@ -15,4 +15,6 @@ class TriangleWaveOscillator(SawtoothWaveOscillator):
         return triangle_wave.astype(np.float32)
     
     def __deepcopy__(self, memo):
-        return TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk, name="TriangleWaveOscillator")
+        copy = TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk, name="TriangleWaveOscillator")
+        copy.active = self.active
+        return copy

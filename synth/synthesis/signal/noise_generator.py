@@ -24,4 +24,6 @@ class NoiseGenerator(Generator):
             return np.zeros(self.frames_per_chunk, dtype=np.float32)
 
     def __deepcopy__(self, memo):
-        return NoiseGenerator(self.sample_rate, self.frames_per_chunk)
+        copy = NoiseGenerator(self.sample_rate, self.frames_per_chunk)
+        copy.active = self.active
+        return copy

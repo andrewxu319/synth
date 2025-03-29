@@ -20,8 +20,10 @@ class Chain:
         return chunk
     
     def __deepcopy__(self, memo):
-        return Chain(deepcopy(self._root_component, memo))
-    
+        copy = Chain(deepcopy(self._root_component, memo))
+        copy.active = self.active
+        return copy
+
     def __str__(self):
         string = "--- Signal Chain ---\n"
         string += str(self._root_component)

@@ -25,7 +25,10 @@ class Gain(Component):
         return chunk * self.amp
 
     def __deepcopy__(self, memo):
-        return Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        # print(f"Gain {self.name} being deep copied!")
+        copy = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        return copy
 
     @property
     def amp(self):
@@ -41,3 +44,17 @@ class Gain(Component):
                 raise ValueError
         except ValueError:
             self.log.error(f"Gain must be between 0.0 and 1.0, got {value}")
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        try:
+            bool_val = bool(value)
+            self._active = bool_val
+            # for subcomponent in self.subcomponents: # !!!!!!!!!!
+            #     subcomponent.active = bool_val
+        except ValueError:
+            self.log.error(f"Couldn't set active with value {value}")

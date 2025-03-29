@@ -56,6 +56,7 @@ class Oscillator(Generator):
         return self._active
     @active.setter
     def active(self, value):
+        print(f"Oscillator {self.name} active set to {self.active}")
         try:
             self._active = bool(value)
             self._frequency = 0.0 if not self._active else self._frequency

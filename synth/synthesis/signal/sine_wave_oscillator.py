@@ -34,8 +34,9 @@ class SineWaveOscillator(Oscillator):
             return np.zeros(self.frames_per_chunk, dtype=np.float32)
 
     def __deepcopy__(self, memo):
-        return SineWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SineWaveOscillator")
-
+        copy = SineWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SineWaveOscillator")
+        copy.active = self.active
+        return copy
 """
 def sin_generator(frequency, amplitude, sample_rate, frames_per_chunk):
     ""

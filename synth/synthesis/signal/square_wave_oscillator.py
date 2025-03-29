@@ -21,4 +21,6 @@ class SquareWaveOscillator(SineWaveOscillator):
         return square_wave # takes chunk from SignWaveOscillator signed as output
     
     def __deepcopy__(self, memo):
-        return SquareWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SquareWaveOscillator")
+        copy = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SquareWaveOscillator")
+        copy.active = self.active
+        return copy

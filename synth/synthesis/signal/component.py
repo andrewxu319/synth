@@ -71,25 +71,25 @@ class Component():
         except ValueError:
             self.log.error(f"Couldn't set frames_per_chunk with value {value}")
 
-    @property
-    def active(self):
-        """
-        The active status.
-        When a component is active it should perform its function
-        When it is inactive it should either return zeros or bypass the signal.
-        If the component is a generator it should generate zeros when inactive.
-        """
-        return self._active
+    # @property
+    # def active(self):
+    #     """
+    #     The active status.
+    #     When a component is active it should perform its function
+    #     When it is inactive it should either return zeros or bypass the signal.
+    #     If the component is a generator it should generate zeros when inactive.
+    #     """
+    #     return self._active
     
-    @active.setter
-    def active(self, value):
-        try:
-            bool_val = bool(value)
-            self._active = bool_val
-            for subcomponent in self.subcomponents: # !!!!!!!!!!
-                subcomponent.active = bool_val
-        except ValueError:
-            self.log.error(f"Couldn't set active with value {value}")
+    # @active.setter
+    # def active(self, value):
+    #     try:
+    #         bool_val = bool(value)
+    #         self._active = bool_val
+    #         for subcomponent in self.subcomponents: # !!!!!!!!!!
+    #             subcomponent.active = bool_val
+    #     except ValueError:
+    #         self.log.error(f"Couldn't set active with value {value}")
     
     def get_subcomponents_str(self, component, depth):
         """

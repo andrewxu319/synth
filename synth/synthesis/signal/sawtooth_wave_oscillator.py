@@ -37,4 +37,6 @@ class SawtoothWaveOscillator(Oscillator):
     
 
     def __deepcopy__(self, memo):
-        return SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SawtoothWaveOscillator")
+        copy = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SawtoothWaveOscillator")
+        copy.active = self.active
+        return copy
