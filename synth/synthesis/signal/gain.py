@@ -28,6 +28,7 @@ class Gain(Component):
         # print(f"Gain {self.name} being deep copied!")
         copy = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
+        copy.amp = self.amp
         return copy
 
     @property

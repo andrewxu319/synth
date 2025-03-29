@@ -2,11 +2,12 @@ import pyaudio
 import logging
 
 class StreamPlayer:
-    def __init__(self, sample_rate: int, frames_per_chunk: int, input_delegate):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, input_delegate, output_device):
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.input_delegate = input_delegate
+        self.output_device = output_device
         self.pyaudio_interface = pyaudio.PyAudio()
         self._output_stream = None
     
@@ -61,13 +62,26 @@ class StreamPlayer:
         Start the output stream
         """
         if self._output_stream is None:
-            self._output_stream = self.pyaudio_interface.open(format = pyaudio.paFloat32,
+            try:
+                self._output_stream = self.pyaudio_interface.open(format = pyaudio.paFloat32,
                                                               channels = 1,
                                                               rate = self.sample_rate,
                                                               output = True,
                                                               stream_callback = self.audio_callback,
-                                                              frames_per_buffer = self.frames_per_chunk)                                                            
+                                                              output_device_index = self.output_device, # if headphones
+                                                              frames_per_buffer = self.frames_per_chunk)  
+            except OSError:
+                self.log.error(f"Output device {self.output_device} is invalid!")
+                self._output_stream = self.pyaudio_interface.open(format = pyaudio.paFloat32,
+                channels = 1,
+                rate = self.sample_rate,
+                output = True,
+                stream_callback = self.audio_callback,
+                output_device_index = None, # no headphones
+                frames_per_buffer = self.frames_per_chunk)  
         self._output_stream.start_stream()
+        self.log.info(self.pyaudio_interface.get_default_output_device_info())
+        # print(self.output_device)
     
     def stop(self):
         """

@@ -1,15 +1,19 @@
 import logging
 import numpy as np
+from typing import Callable
 
 from .generator import Generator
 
 class Oscillator(Generator):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="Oscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, formula: Callable, name: str="Oscillator"):
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
+        self._formula = formula
         self._frequency = 0.0
         self._phase = 0.0
-        self._amplitude = 0.1
+        self._amplitude = 0.5
+        self.parent_component_cannot_set_active = False
+        logging.info(f"new {self.name} created for some reason??? with active {self._active}")
 
     @property
     def frequency(self):
@@ -56,12 +60,46 @@ class Oscillator(Generator):
         return self._active
     @active.setter
     def active(self, value):
-        print(f"Oscillator {self.name} active set to {self.active}")
         try:
-            self._active = bool(value)
+            self._active = value
             self._frequency = 0.0 if not self._active else self._frequency
+            print(f"Oscillator {self.name} active set to {self.active}")
         except:
             self.log.error(f"Unable to set with value {value}")
+    
+    def __iter__(self):
+        self._chunk_duration = self.frames_per_chunk / self.sample_rate
+        self._chunk_start_time = 0.0
+        self._chunk_end_time = self._chunk_duration
+        return self
+
+    def __next__(self):
+        self.log.info(f"Oscillator {self.name} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
+        if self.active:
+            # logging.info(f"{self.name} active!")
+            if self.frequency <= 0.0:
+                if self.frequency < 0.0:
+                    self.log.error("Overriding negative frequency to 0")
+                sample = np.zeros(self.frames_per_chunk)
+
+            else:
+                # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+                sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+                # logging.info(list(sample))
+
+            self._chunk_start_time = self._chunk_end_time
+            self._chunk_end_time += self._chunk_duration
+
+            return sample.astype(np.float32)
+
+        else:
+            return np.zeros(self.frames_per_chunk, dtype=np.float32)
+
+    def __deepcopy__(self, memo):
+        # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
+        copy = Oscillator(self.sample_rate, self.frames_per_chunk, self._formula, name=self.name)
+        copy.active = self.active
+        return copy
 
 
 """
