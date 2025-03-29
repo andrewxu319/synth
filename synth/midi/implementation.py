@@ -5,4 +5,4 @@ class Implementation(Enum):
     OSC_2_AMP = 15
     OSC_3_AMP = 16
     OSC_4_AMP = 17
-    NOISE_AMP = 18
+    OSC_5_AMP = 18

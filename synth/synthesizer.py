@@ -8,6 +8,7 @@ from copy import deepcopy
 import numpy as np
 
 from . import midi
+from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
@@ -23,12 +24,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.frames_per_chunk = frames_per_chunk
         self.mailbox = mailbox
         self.num_voices = num_voices
-        # self.output_device = output_device
+        self.amp_values = np.linspace(0, 1, 128) # to avoid doing division every time
         self.should_run = True
     
         # Set up the voices
         signal_prototype = self.set_up_signal_chain()
-        self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
+        # self.log.info(f"Signal chain Prototype:\n{str(signal_prototype)}")
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
         # Set up the stream player
@@ -69,7 +70,23 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def control_change_handler(self, channel: int, cc_number: int, value: int): # prob j change the volume? go to Chain, search by gain, multiply by value
         self.log.info(f"Control Change: channel {channel}, CC {cc_number}, value {value}")
-        # ADD MORE LATER
+        logging.info(Implementation.OSC_1_AMP.value + 1)
+        match cc_number:
+            case Implementation.OSC_1_AMP.value:
+                self.set_gain(0, value)
+                self.log.info(f"Gain 1 set: {value}")
+            case Implementation.OSC_2_AMP.value:
+                self.set_gain(1, value)
+                self.log.info(f"Gain 2 set: {value}")
+            case Implementation.OSC_3_AMP.value:
+                self.set_gain(2, value)
+                self.log.info(f"Gain 3 set: {value}")
+            case Implementation.OSC_4_AMP.value:
+                self.set_gain(3, value)
+                self.log.info(f"Gain 4 set: {value}")
+            case Implementation.OSC_5_AMP.value:
+                self.set_gain(4, value)
+                self.log.info(f"Gain 5 set: {value}")
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
@@ -80,13 +97,14 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=gains)
 
         # Defines parameters
-        self.oscillator_active_status = [True, False, False, False, False]
+        self.oscillator_active_status = [True, True, True, True, True]
         self.amplitude_status = [1.0, 1.0, 1.0, 1.0, 1.0]
         # self.lpf_active_status = [True, True, False, False, False]
         # self.lpf_cutoff_status = [200, 200, 200, 200, 200]
 
         for i in range(len(self.oscillators)):
             self.oscillators[i].active = self.oscillator_active_status[i]
+            # print("woah!")
             # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
         for i in range(len(gains)):
             gains[i].amplitude = self.amplitude_status[i] # gain only has one subcomponent
@@ -148,3 +166,9 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         that was turned on
         """
         return hash(f"{note}{channel}")
+    
+    def set_gain(self, osc_number: int, cc_value: int):
+        for voice in self.voices:
+            gain_components = voice.signal_chain.get_components_by_control_tag(f"gain_{osc_number}")
+            for gain_component in gain_components:
+                gain_component.amplitude = self.amp_values[cc_value]

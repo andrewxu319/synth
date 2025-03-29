@@ -13,7 +13,7 @@ class Gain(Component):
     def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List["Component"] = [], name: str="Gain", control_tag: str="gain"):
         super().__init__(sample_rate, frames_per_chunk, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
-        self._amp = 1.0
+        self._amplitude = 1.0
         self.control_tag = control_tag
     
     def __iter__(self):
@@ -22,13 +22,13 @@ class Gain(Component):
     
     def __next__(self):
         chunk = next(self.subcomponent_iter)
-        return chunk * self.amp
+        return chunk * self.amplitude 
 
     def __deepcopy__(self, memo):
         # print(f"Gain {self.name} being deep copied!")
         copy = Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
-        copy.amp = self.amp
+        copy.amplitude = self.amplitude 
         return copy
 
     @property
@@ -40,7 +40,7 @@ class Gain(Component):
         try:
             float_value = float(value)
             if float_value >= 0 and float_value <= 1.9:
-                self._amp = float_value
+                self._amplitude = float_value
             else:
                 raise ValueError
         except ValueError:
