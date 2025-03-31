@@ -24,7 +24,7 @@ class Component():
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.subcomponents = subcomponents
-        self._active = False
+        self.active = False
         self.name = name + "#" + str(random.randint(0, 9999))
         self.control_tag = control_tag
 
@@ -70,7 +70,6 @@ class Component():
                 raise ValueError
         except ValueError:
             self.log.error(f"Couldn't set frames_per_chunk with value {value}")
-
 
     @property
     def active(self):

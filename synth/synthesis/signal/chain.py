@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from .component import Component
 from .oscillator import Oscillator
+from .mixer import Mixer
 
 class Chain:
     def __init__(self, root_component: Component): # only takes in root most component. all child components will be accessible under the root component anyway
@@ -35,11 +36,11 @@ class Chain:
         The active status.
         The chain is considered active when the root component is active
         """
-        return self._root_component.active
+        return self.get_components_by_class(Mixer)[0].active
     
     @active.setter
     def active(self, value):
-        self._root_component.active = value
+        self.get_components_by_class(Mixer)[0].active = value
     
     def get_components_by_class(self, cls): # cls = class
         components = []

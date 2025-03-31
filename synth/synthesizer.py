@@ -104,7 +104,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.amplitude_status = [0.0, 0.0, 0.0, 1.0, 0.0] # initial condition. implement settings saving later
         self.lpf_active_status = [False, False, False, False, False]
         self.lpf_cutoff_status = [200, 200, 200, 200, 200]
-        self.delay_time_status = 1.0
+        self.delay_active_status = True
+        self.delay_time_status = 0.5
         self.delay_feedback_status = 0.5
 
         for i in range(len(self.oscillators)):
@@ -117,6 +118,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             lpfs[i].active = self.lpf_active_status[i]
             lpfs[i].cutoff_frequency = self.lpf_cutoff_status[i]
             logging.info(f"LPF FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff_frequency}")
+        delay.active = self.delay_active_status
         delay.delay_time = self.delay_time_status
         delay.feedback = self.delay_feedback_status
 
@@ -130,10 +132,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         num_active_voices = 0
         while True:
             for voice in self.voices:
+                mixed_next_chunk += next(voice.signal_chain)
                 if voice.active:
-                    mixed_next_chunk += next(voice.signal_chain)
                     num_active_voices += 1
-            
+
             mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk

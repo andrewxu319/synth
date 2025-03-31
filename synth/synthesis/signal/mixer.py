@@ -40,3 +40,4 @@ class Mixer(Component):
             #     subcomponent.active = bool_val
         except ValueError:
             self.log.error(f"Couldn't set active with value {value}")
+    
