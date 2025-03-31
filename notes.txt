@@ -12,4 +12,4 @@ current version of main.py can be turned into more advanced mono synth
 
 git add --all
 git commit -m [notes]
-git push origin main
+git push (-f for forced push) origin main
