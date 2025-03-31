@@ -101,7 +101,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
         # Defines parameters
         self.oscillator_active_status = [True, True, True, True, True]
-        self.amplitude_status = [0.0, 0.0, 0.0, 1.0, 0.0] # initial condition. implement settings saving later
+        self.amplitude_status = [0.0, 0.0, 0.0, 0.0, 0.0] # initial condition. implement settings saving later
         self.lpf_active_status = [False, False, False, False, False]
         self.lpf_cutoff_status = [200, 200, 200, 200, 200]
         self.delay_active_status = True

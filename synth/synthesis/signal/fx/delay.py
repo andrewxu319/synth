@@ -44,6 +44,7 @@ class Delay(Component):
                 # print(mix[:self.frames_into_chunk])
                 # print(self.next_chunk_start_addition)
                 mix[self.frames_into_chunk:] += self.delay_buffer[:self.frames_per_chunk - self.frames_into_chunk] * self.feedback
+
                 self.delay_buffer[start_index:] = mix[:self.frames_into_chunk]
                 self.next_chunk_start_addition = self.delay_buffer[self.frames_per_chunk - self.frames_into_chunk : self.frames_per_chunk]
 
@@ -52,6 +53,16 @@ class Delay(Component):
                 # print(mix[self.frames_into_chunk:])
                 self.delay_buffer[self.delay_frames - self.frames_per_chunk : self.chunks_elapsed * self.frames_per_chunk] = mix[self.frames_into_chunk:] # complete rest of chunk
                 # self.chunks_elapsed += 1
+                
+                """ IDT THIS DOES ANYTHING
+                if max(self.delay_buffer) < 0.000005 and max(self.next_chunk_start_addition) < 0.000005:
+                    self.delay_buffer *= 0.0
+                    self.next_chunk_start_addition *= 0.0
+                else:
+                    
+                    print(f"buffer {max(self.delay_buffer)}")
+                    print(f"next {max(self.next_chunk_start_addition)}")
+                """
                                 
         return np.astype(mix, np.float32)
     
