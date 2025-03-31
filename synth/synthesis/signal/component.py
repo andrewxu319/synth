@@ -21,8 +21,8 @@ class Component():
 
     def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List["Component"]=[], name="Component", control_tag: str=""):
         self.log = logging.getLogger(__name__)
-        self._sample_rate = sample_rate
-        self._frames_per_chunk = frames_per_chunk
+        self.sample_rate = sample_rate
+        self.frames_per_chunk = frames_per_chunk
         self.subcomponents = subcomponents
         self._active = False
         self.name = name + "#" + str(random.randint(0, 9999))
@@ -70,6 +70,18 @@ class Component():
                 raise ValueError
         except ValueError:
             self.log.error(f"Couldn't set frames_per_chunk with value {value}")
+
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        try:
+            self._active = value
+        except ValueError:
+            self.log.error(f"Couldn't set active with value {value}")
 
     # @property
     # def active(self):

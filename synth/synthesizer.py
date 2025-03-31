@@ -14,6 +14,7 @@ from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.fx.low_pass_filter import LowPassFilter
+from .synthesis.signal.fx.delay import Delay
 from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
 
@@ -96,12 +97,15 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
         lpfs = [LowPassFilter(self.sample_rate, self.frames_per_chunk, subcomponents=[gains[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=lpfs)
+        delay = Delay(self.sample_rate, self.frames_per_chunk, subcomponents=[mixer])
 
         # Defines parameters
         self.oscillator_active_status = [True, True, True, True, True]
-        self.amplitude_status = [1.0, 1.0, 1.0, 1.0, 0.0] # initial condition. implement settings saving later
-        self.lpf_active_status = [True, True, True, True, True]
+        self.amplitude_status = [0.0, 0.0, 0.0, 1.0, 0.0] # initial condition. implement settings saving later
+        self.lpf_active_status = [False, False, False, False, False]
         self.lpf_cutoff_status = [200, 200, 200, 200, 200]
+        self.delay_time_status = 1.0
+        self.delay_feedback_status = 0.5
 
         for i in range(len(self.oscillators)):
             self.oscillators[i].active = self.oscillator_active_status[i]
@@ -113,8 +117,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             lpfs[i].active = self.lpf_active_status[i]
             lpfs[i].cutoff_frequency = self.lpf_cutoff_status[i]
             logging.info(f"LPF FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff_frequency}")
+        delay.delay_time = self.delay_time_status
+        delay.feedback = self.delay_feedback_status
 
-        return Chain(mixer) # top most component in the chain is mixer
+        return Chain(delay) # top most component in the chain is mixer
 
     def generator(self):
         """

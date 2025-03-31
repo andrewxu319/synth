@@ -13,7 +13,7 @@ class Oscillator(Generator):
         self._phase = 0.0
         self._amplitude = 0.5
         self.parent_component_cannot_set_active = False
-        logging.info(f"new {self.name} created for some reason??? with active {self._active}")
+        # logging.info(f"new {self.name} created for some reason??? with active {self._active}")
 
     @property
     def frequency(self):
@@ -63,7 +63,7 @@ class Oscillator(Generator):
         try:
             self._active = value
             self._frequency = 0.0 if not self._active else self._frequency
-            print(f"Oscillator {self.name} active set to {self.active}")
+            # print(f"Oscillator {self.name} active set to {self.active}")
         except:
             self.log.error(f"Unable to set with value {value}")
     
@@ -74,7 +74,7 @@ class Oscillator(Generator):
         return self
 
     def __next__(self):
-        self.log.info(f"Oscillator {self.name} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
+        # self.log.info(f"Oscillator {self.name} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
         if self.active:
             # logging.info(f"{self.name} active!")
             if self.frequency <= 0.0:

@@ -36,17 +36,17 @@ class LowPassFilter(Component):
         self.log.info(f"deep copied lpf {self.name} with active {self.active} and freq {self.cutoff_frequency}")
         return copy
 
-    @property
-    def active(self):
-        return self._active
+    # @property
+    # def active(self):
+    #     return self._active
 
-    @active.setter
-    def active(self, value):
-        try:
-            self._active = value
-            logging.info(f"LPF active set to {value}!")
-        except ValueError:
-            self.log.error(f"Couldn't set active with value {value}")
+    # @active.setter
+    # def active(self, value):
+    #     try:
+    #         self._active = value
+    #         logging.info(f"LPF active set to {value}!")
+    #     except ValueError:
+    #         self.log.error(f"Couldn't set active with value {value}")
 
     @property
     def cutoff_frequency(self):
