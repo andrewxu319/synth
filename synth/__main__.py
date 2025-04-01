@@ -1,6 +1,7 @@
 import logging
 from time import sleep
 import queue
+import os
 import sys
 from optparse import OptionParser
 
@@ -42,9 +43,10 @@ if __name__ == "__main__":
             sleep(1)
     except KeyboardInterrupt:
         log.info("Caught keyboard interrupt. Exiting the program.")
+        os._exit(1)
     
-    listener_mailbox.put("exit")
-    synth_mailbox.put("exit")
-    midi_listener.join() # wait for midi_listener to terminate
-    synthesizer.join()
-    sys.exit(0)
+    # listener_mailbox.put("exit")
+    # synth_mailbox.put("exit")
+    # midi_listener.join() # wait for midi_listener to terminate
+    # synthesizer.join()
+    # sys.exit(0)

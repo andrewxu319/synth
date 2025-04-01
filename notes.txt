@@ -13,3 +13,12 @@ current version of main.py can be turned into more advanced mono synth
 git add --all
 git commit -m [notes]
 git push (-f for forced push) origin main
+
+
+TO DO LIST
+x delay wet dry
+x instant exit
+x high pass filters
+- sqlite
+- ui (tkinter)
+- anti aliasing

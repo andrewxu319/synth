@@ -15,28 +15,32 @@ class Delay(Component):
         self.delay_time = 0.0
         self.delay_buffer = np.zeros(self.delay_frames, np.float32)
         self.delay_time_start_index = self.delay_frames - int(self.delay_time * self.sample_rate)
-        self.feedback = 0.5
+        self.feedback = 0.0
+        self.wet = 0.0
     
     def __iter__(self):
         self.subcomponent_iter = iter(self.subcomponents[0])
         return self
     
     def __next__(self):
-        mix = next(self.subcomponent_iter)
+        dry_mix = next(self.subcomponent_iter)
+        wet_mix = dry_mix
 
-        if self.active and self.feedback > 0.0:
-            if self.delay_time > 0:
-                delayed_signal = self.delay_buffer[self.delay_time_start_index: self.delay_time_start_index + self.frames_per_chunk]
-                # print(delayed_signal)
-                while len(delayed_signal) < self.frames_per_chunk:
-                    delayed_signal = np.concatenate((delayed_signal, self.delay_buffer[:self.frames_per_chunk - len(delayed_signal)]))
-                
-                delayed_signal *= self.feedback
-                mix += delayed_signal
+        if self.active and self.feedback > 0.0 and self.delay_time > 0.0 and self.wet > 0.0:
+            delayed_signal = self.delay_buffer[self.delay_time_start_index: self.delay_time_start_index + self.frames_per_chunk]
+            # print(delayed_signal)
+            while len(delayed_signal) < self.frames_per_chunk:
+                delayed_signal = np.concatenate((delayed_signal, self.delay_buffer[:self.frames_per_chunk - len(delayed_signal)]))
+            
+            delayed_signal *= self.feedback
+            wet_mix += delayed_signal
             
             self.delay_buffer = np.roll(self.delay_buffer, -self.frames_per_chunk)
-            self.delay_buffer[self.delay_frames - self.frames_per_chunk: self.delay_frames] = mix
+            self.delay_buffer[self.delay_frames - self.frames_per_chunk: self.delay_frames] = wet_mix
 
+            # round down to zero here?
+
+        mix = dry_mix * (1 - self.wet) + wet_mix * self.wet
         return np.astype(mix, np.float32)
     
     def __deepcopy__(self, memo):
@@ -45,6 +49,7 @@ class Delay(Component):
         copy.delay_time = self.delay_time
         copy.feedback = self.feedback
         copy.delay_buffer = self.delay_buffer
+        copy.wet = self.wet
         return copy
     
     @property
