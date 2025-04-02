@@ -1,48 +1,115 @@
-import tkinter as tk
+from PyQt6.QtCore import Qt
+import PyQt6.QtWidgets as qtw
+import PyQt6.QtGui as qtg
 
-from ctypes import windll
-windll.shcore.SetProcessDpiAwareness(1)
+class MainWindow(qtw.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Synth")
+        self.resize(1200, 800)
 
-window = tk.Tk()
+        #################
+        self.label = qtw.QLabel("Hi")
 
-window.geometry("800x500")
-window.title("Synthesizer")
+        self.input = qtw.QLineEdit()
+        # self.input.textChanged.connect(self.label.setText)
 
-label = tk.Label(window, text="Synthesizer", font=("Calibri", 18))
-label.pack(padx=20, pady=20)
+        layout = qtw.QVBoxLayout()
+        layout.addWidget(self.input)
+        layout.addWidget(self.label)
 
-textbox = tk.Text(window, height=3, font=("Calibri", 16))
-textbox.pack(padx=20, pady=20)
+        container = qtw.QWidget()
+        container.setLayout(layout)
+        #################
 
-button_frame = tk.Frame(window)
-button_frame.columnconfigure(0, weight=1)
-button_frame.columnconfigure(1, weight=1)
-button_frame.columnconfigure(2, weight=1)
+        self.setCentralWidget(container)
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.label.setText("mouseMoveEvent")
+    
+    def contextMenuEvent(self, event):
+        context_menu = qtw.QMenu(self)
+        action_1 = qtg.QAction("item 1", self)
+        action_1.triggered.connect(lambda: print("hi"))
+        context_menu.addAction(action_1) # parent = self = MainWindow
+        context_menu.addAction(qtg.QAction("item 2", self))
+        context_menu.addAction(qtg.QAction("item 2", self))
+        context_menu.exec(event.globalPos())
+    
+app = qtw.QApplication([])
 
-button_1 = tk.Button(button_frame, text="Button 1", font=("Calibri", 18))
-button_1.grid(row=0, column=0, sticky=tk.W+tk.E)
+window = MainWindow()
+window.show()
 
-button_2 = tk.Button(button_frame, text="Button 2", font=("Calibri", 18))
-button_2.grid(row=0, column=1, sticky=tk.W+tk.E)
+app.exec()
 
-button_3 = tk.Button(button_frame, text="Button 3", font=("Calibri", 18))
-button_3.grid(row=0, column=2, sticky=tk.W+tk.E)
 
-button_4 = tk.Button(button_frame, text="Button 4", font=("Calibri", 18))
-button_4.grid(row=1, column=0, sticky=tk.W+tk.E)
 
-button_5 = tk.Button(button_frame, text="Button 5", font=("Calibri", 18))
-button_5.grid(row=1, column=1, sticky=tk.W+tk.E)
 
-button_6 = tk.Button(button_frame, text="Button 6", font=("Calibri", 18))
-button_6.grid(row=1, column=2, sticky=tk.W+tk.E)
 
-button_frame.pack(fill="x")
 
-# entry = tk.Entry(window, font=("Calibri", 30))
-# entry.pack(padx=20, pady=20)
 
-# button = tk.Button(window, text="Button", font=("Calibri", 18))
-# button.pack(padx=50, pady=50)
 
-window.mainloop()
+
+
+
+
+
+
+# import tkinter as tk
+# from tkinter import ttk
+# from tkinter import messagebox
+# from tkdial import Jogwheel
+
+# from ctypes import windll
+# windll.shcore.SetProcessDpiAwareness(1)
+
+# class GUI:
+#     def __init__(self):
+#         self.window = tk.Tk()
+#         self.window.geometry("800x500")
+#         self.window.title("Synthesizer")
+
+#         # Notebook widget
+#         self.notebook = ttk.Notebook(self.window)
+
+#         # Tab Osc
+#         self.tab_osc = ttk.Frame(self.notebook)
+
+#         self.top_half = tk.Frame(self.tab_osc, background="red")
+        
+#         self.osc_panel = tk.Frame(self.top_half, background="blue")
+#         self.osc_panel_label = tk.Label(self.osc_panel, text="Oscillators", justify=tk.LEFT).pack(padx=10, pady=10)
+#         self.osc_grid = tk.Grid()
+#         self.osc_panel.pack(side=tk.LEFT, fill=tk.X, expand=1)
+
+#         self.osc_panel = tk.Frame(self.top_half, background="green")
+#         self.osc_panel_label = tk.Label(self.osc_panel, text="Filter", justify=tk.LEFT).pack(padx=10, pady=10)
+#         self.osc_panel.pack(side=tk.RIGHT, fill=tk.X, expand=1)
+
+#         self.top_half.pack(fill=tk.X, expand=0)
+
+#         self.tab_fx = ttk.Frame(self.notebook)
+
+#         self.notebook.add(self.tab_osc, text="Osc")
+#         self.notebook.add(self.tab_fx, text="FX")
+#         self.notebook.pack(fill=tk.BOTH, expand=1)
+        
+#         self.window.mainloop()
+    
+#     def show_message(self):
+#         if self.checkbox_state.get() == 0:
+#             print(self.textbox.get("1.0", tk.END))
+#         else:
+#             messagebox.showinfo(title="Message", message=self.textbox.get("1.0", tk.END))
+    
+#     def shortcut(self, event):
+#         if event.keysym == "Return" and event.state==4:
+#             self.show_message()
+    
+#     def on_closing(self):
+#         self.window.destroy()
+
+# GUI()
+

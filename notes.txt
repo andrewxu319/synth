@@ -22,3 +22,5 @@ x high pass filters
 - sqlite
 - ui (tkinter)
 - anti aliasing
+
+https://github.com/Akascape/TkDial
