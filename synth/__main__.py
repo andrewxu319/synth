@@ -11,6 +11,9 @@ from . import settings
 from .synthesizer import Synthesizer
 import synth.midi as midi
 from synth.midi.midi_listener import MidiListener
+from synth.ui.ui_listener import UiListener
+
+from .ui.main_window import Ui
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -27,18 +30,26 @@ if __name__ == "__main__":
     available_ports = midi.get_available_controllers()
     log.info(f"Available MIDI ports: {available_ports}")
 
-    listener_mailbox = queue.Queue()
+    thread_mailbox = queue.Queue()
+    ui_listener_mailbox = queue.Queue()
     synth_mailbox = queue.Queue()
 
     midi_listen_port = options.midi_port if options.midi_port else settings.auto_attach
     # midi_listen_port = available_ports[0] # !!!!!!!!!!!
     log.info(f"Using MIDI port {midi_listen_port}")
-    midi_listener = MidiListener(listener_mailbox, synth_mailbox, midi_listen_port)
+    midi_listener = MidiListener(thread_mailbox, synth_mailbox, midi_listen_port)
+
+    ui_listener = UiListener(thread_mailbox, ui_listener_mailbox, synth_mailbox)
     
     synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, 4, settings.output_device)
+
+    ui = Ui(ui_listener_mailbox)
+
     try: # our two threads
         midi_listener.start()
+        ui_listener.start()
         synthesizer.start()
+        ui.start()
         while True:
             sleep(1)
     except KeyboardInterrupt:
