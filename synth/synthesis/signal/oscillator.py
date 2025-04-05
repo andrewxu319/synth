@@ -5,10 +5,12 @@ from typing import Callable
 from .generator import Generator
 
 class Oscillator(Generator):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, formula: Callable, name: str="Oscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, formula: Callable, name: str="Oscillator", control_tag: str="osc"):
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
         self._formula = formula
+        self.name = name
+        self.control_tag = control_tag
         self._frequency = 0.0
         self._phase = 0.0
         self._amplitude = 0.5
@@ -63,7 +65,7 @@ class Oscillator(Generator):
         try:
             self._active = value
             self._frequency = 0.0 if not self._active else self._frequency
-            # print(f"Oscillator {self.name} active set to {self.active}")
+            self.log.info(f"Oscillator {self.name} active set to {self.active}")
         except:
             self.log.error(f"Unable to set with value {value}")
     
@@ -97,7 +99,7 @@ class Oscillator(Generator):
 
     def __deepcopy__(self, memo):
         # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
-        copy = Oscillator(self.sample_rate, self.frames_per_chunk, self._formula, name=self.name)
+        copy = Oscillator(self.sample_rate, self.frames_per_chunk, self._formula, name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         return copy
 

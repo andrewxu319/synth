@@ -74,13 +74,18 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 int_cc_number = int(cc_number)
                 int_value = int(value)
                 self.control_change_handler(sender, int_channel, int_cc_number, int_value)
+            case [sender, "set_active", "-c", channel, "-n", number, "-v", value]:
+                self.set_active(sender, int(channel), int(number), value=="True")
             case _:
                 self.log.info(f"Unknown MIDI message: {message}")
     
     def control_change_handler(self, sender: str, channel: int, cc_number: int, value: int): # prob j change the volume? go to Chain, search by gain, multiply by value
         self.log.info(f"Control Change: sender {sender}, channel {channel}, CC {cc_number}, value {value}")
-        logging.info(Implementation.OSC_1_AMP.value + 1)
         match cc_number:
+            # case Implementation.OSC_AMP.value:
+            #     self.set_gain(sender, self.ui.window.osc_tab.focused_osc.number, value)
+            #     self.log.info(f"Gain {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
+
             case Implementation.OSC_1_AMP.value:
                 self.set_gain(sender, 0, value)
                 self.log.info(f"Gain 1 set: {value}")
@@ -97,21 +102,13 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.set_gain(sender, 4, value)
                 self.log.info(f"Gain 5 set: {value}")
 
-            case Implementation.lpf_1_CUTOFF.value:
-                self.set_lpf_cutoff(sender, 0, value)
-                self.log.info(f"lpf 1 set: {value}")
-            case Implementation.lpf_2_CUTOFF.value:
-                self.set_lpf_cutoff(sender, 1, value)
-                self.log.info(f"lpf 2 set: {value}")
-            case Implementation.lpf_3_CUTOFF.value:
-                self.set_lpf_cutoff(sender, 2, value)
-                self.log.info(f"lpf 3 set: {value}")
-            case Implementation.lpf_4_CUTOFF.value:
-                self.set_lpf_cutoff(sender, 3, value)
-                self.log.info(f"lpf 4 set: {value}")
-            case Implementation.lpf_5_CUTOFF.value:
-                self.set_lpf_cutoff(sender, 4, value)
-                self.log.info(f"lpf 5 set: {value}")
+            case Implementation.HPF_CUTOFF.value:
+                self.set_hpf_cutoff(sender, self.ui.window.osc_tab.focused_osc.number, value)
+                self.log.info(f"hpf {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
+
+            case Implementation.LPF_CUTOFF.value:
+                self.set_lpf_cutoff(sender, self.ui.window.osc_tab.focused_osc.number, value)
+                self.log.info(f"lpf {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
             
             case Implementation.DELAY_TIME.value:
                 self.set_delay_time(sender, value)
@@ -125,7 +122,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.oscillator_library = OscillatorLibrary(self.sample_rate, self.frames_per_chunk)
         self.oscillators = self.oscillator_library.oscillators
         gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
-        lpfs = [Filter(self.sample_rate, self.frames_per_chunk, subcomponents=[gains[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
+        hpfs = [Filter(self.sample_rate, self.frames_per_chunk, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
+        lpfs = [Filter(self.sample_rate, self.frames_per_chunk, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=lpfs)
         delay = Delay(self.sample_rate, self.frames_per_chunk, subcomponents=[mixer])
 
@@ -133,6 +131,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # RLY DONT NEED THIS PART LOWK
         self.oscillator_active_status = [True, True, True, True, True]
         self.amplitude_status = [0.0, 0.0, 0.0, 1.0, 0.0] # initial condition. implement settings saving later
+        self.hpf_active_status = [True, True, True, True, True]
+        self.hpf_cutoff_status = [200, 200, 200, 200, 200]
         self.lpf_active_status = [True, True, True, True, True]
         self.lpf_cutoff_status = [20000, 20000, 20000, 20000, 20000]
         self.delay_active_status = True
@@ -146,6 +146,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
         for i in range(len(gains)):
             gains[i].amplitude = self.amplitude_status[i] # gain only has one subcomponent
+        for i in range(len(hpfs)):
+            hpfs[i].active = self.hpf_active_status[i]
+            hpfs[i].cutoff_frequency = self.hpf_cutoff_status[i]
+            logging.info(f"hpf FREQ active {hpfs[i].active} frequency {hpfs[i].cutoff_frequency}")
         for i in range(len(lpfs)):
             lpfs[i].active = self.lpf_active_status[i]
             lpfs[i].cutoff_frequency = self.lpf_cutoff_status[i]
@@ -220,6 +224,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             for component in components:
                 component.amplitude = self.amp_values[cc_value]
     
+    def set_hpf_cutoff(self, sender: str, number: int, cc_value: int):
+        for voice in self.voices:
+            components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
+            for component in components:
+                component.cutoff_frequency = self.filter_cutoff_values[cc_value]
+
     def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
@@ -243,3 +253,9 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.wet = self.delay_wet_values[cc_value]
+    
+    def set_active(self, sender, channel, number, value):
+        for voice in self.voices:
+            gain_components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
+            for gain_component in gain_components:
+                gain_component.subcomponents[0].active = value

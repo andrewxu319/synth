@@ -9,24 +9,24 @@ class OscillatorLibrary():
             Oscillator(sample_rate, frames_per_chunk,
                        lambda frequency, phase, amplitude, t:
                        amplitude * np.sin(phase + (2 * np.pi * frequency * t)),
-                       "SineWaveOscillator"),
+                       "SineWaveOscillator", "osc_0"),
             # "sine_wave_oscillator": SineWaveOscillator(sample_rate, frames_per_chunk),
             Oscillator(sample_rate, frames_per_chunk,
                        lambda frequency, phase, amplitude, t:
                        np.sign(amplitude * np.sin(phase + (2 * np.pi * frequency * t))),
-                       "SquareWaveOscillator"),
+                       "SquareWaveOscillator", "osc_1"),
             Oscillator(sample_rate, frames_per_chunk,
                        lambda frequency, phase, amplitude, t:
                        amplitude * (t / (1 / frequency) - np.floor(t / (1 / frequency) + 0.5)),
-                       "SawtoothWaveOscillator"),
+                       "SawtoothWaveOscillator", "osc_2"),
             Oscillator(sample_rate, frames_per_chunk,
                        lambda frequency, phase, amplitude, t:
                        (abs(amplitude * (t / (1 / frequency) - np.floor(t / (1 / frequency) + 0.5))) - 0.5) * 2,
-                       "TriangleWaveOscillator"),
+                       "TriangleWaveOscillator", "osc_3"),
             Oscillator(sample_rate, frames_per_chunk,
                        lambda frequency, phase, amplitude, t:
                        amplitude * np.random.default_rng().uniform(-1.0, 1.0, frames_per_chunk),
-                       "NoiseOscillator")
+                       "NoiseOscillator", "osc_4")
         ]
         
         self.log = logging.getLogger(__name__)

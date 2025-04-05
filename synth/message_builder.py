@@ -63,6 +63,10 @@ class CommandBuilder(MessageBuilder):
     def control_change(self):
         self.message += " control_change"
         return CCParameterBuilder(self.message)
+    
+    def set_active(self):
+        self.message += " set_active"
+        return UIParameterBuilder(self.message)
 
 class NoteParameterBuilder(MessageBuilder):
     """
@@ -143,3 +147,37 @@ class CCParameterBuilder(MessageBuilder):
             raise
 
         return CCParameterBuilder(self.message)
+
+class UIParameterBuilder(MessageBuilder):
+    def __init__(self, message_base: str) -> None:
+        super().__init__()
+        self.message = message_base
+  
+    def on_channel(self, channel):
+        try:
+            int_val = int(channel)
+            if int_val < 0 or int_val > 15:
+                raise ValueError
+            self.message += f" -c {int_val}"
+        except ValueError:
+            self.log.error(f"Unable to set channel: {channel}")
+            raise
+    
+        return UIParameterBuilder(self.message)
+    
+    def with_osc_number(self, value):
+        try:
+            int_val = int(value)
+            if int_val < 0 or int_val > 4:
+                raise ValueError
+            self.message += f" -n {int_val}"
+        except ValueError:
+            self.log.error(f"Unable to set oscillator number {value}! Values are from 0-4")
+            raise
+            
+        return UIParameterBuilder(self.message)
+
+    def with_value(self, value):
+        self.message += f" -v {value}"
+
+        return UIParameterBuilder(self.message)

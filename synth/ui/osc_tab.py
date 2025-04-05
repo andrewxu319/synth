@@ -64,6 +64,7 @@ class OscillatorSection(QtWidgets.QWidget):
 
         active_checkbox = QtWidgets.QCheckBox()
         active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
+        active_checkbox.stateChanged.connect(self.set_active)
 
         self.gain_dial = QtWidgets.QDial()
         self.gain_dial.setRange(0, 127)
@@ -83,7 +84,7 @@ class OscillatorSection(QtWidgets.QWidget):
         self.lpf_dial.setMinimumSize(1,1)
         self.lpf_dial.sliderMoved.connect(self.set_lpf)
 
-        layout.addWidget(QtWidgets.QLabel(text=f"Osc {number}"))
+        layout.addWidget(QtWidgets.QLabel(text=f"Osc {number + 1}"))
         layout.addWidget(active_checkbox)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Gain:"))
@@ -97,19 +98,37 @@ class OscillatorSection(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def set_active(self, state):
+        self.ui_listener_mailbox.put({
+            "type": "ui_message",
+            "channel": 0,
+            "number": self.number,
+            "value": state == 2 # use midi cc instead?
+        })
+
     def set_gain(self, value):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
-            "control_implementation": f"OSC_{self.number}_AMP",
+            "control_implementation": f"OSC_{self.number + 1}_AMP",
             "value": value
         })
     
     def set_hpf(self, value):
-        pass
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "control_implementation": f"HPF_CUTOFF",
+            "value": value
+        })
 
     def set_lpf(self, value):
-        pass
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "control_implementation": f"LPF_CUTOFF",
+            "value": value
+        })
 
 class OscTab(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
@@ -128,7 +147,7 @@ class OscTab(QtWidgets.QWidget):
 
         self.osc_list = []
         for i in range(5):
-            self.osc_list.append(OscillatorSection(str(i + 1), self.ui_listener_mailbox))
+            self.osc_list.append(OscillatorSection(i, self.ui_listener_mailbox))
             osc_section.addWidget(self.osc_list[i], i, 0)
 
         self.osc_list[0].mouseReleaseEvent = lambda _: self.focus(0) # loop doesnt work??
@@ -136,8 +155,8 @@ class OscTab(QtWidgets.QWidget):
         self.osc_list[2].mouseReleaseEvent = lambda _: self.focus(2)
         self.osc_list[3].mouseReleaseEvent = lambda _: self.focus(3)
         self.osc_list[4].mouseReleaseEvent = lambda _: self.focus(4)
-
-        
+        self.focus(0)
+                
         top_section.addLayout(osc_section, 3)
 
         filter_section = Color("Yellow")
@@ -153,10 +172,10 @@ class OscTab(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def focus(self, number):
-        focused_osc = self.osc_list[number]
-        focused_osc.focus = True
-        focused_osc.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
-        focused_osc.setStyleSheet('background-color: #fcf6cc')
+        self.focused_osc = self.osc_list[number]
+        self.focused_osc.focus = True
+        self.focused_osc.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.focused_osc.setStyleSheet('background-color: #fcf6cc')
 
         remaining_numbers = list(range(5))
         remaining_numbers.pop(number)

@@ -8,14 +8,14 @@ from scipy.signal import butter, lfilter, lfilter_zi # type: ignore
 from ..component import Component
 
 class Filter(Component):
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List["Component"] = [], name="filter", control_tag="filter"):
+    def __init__(self, sample_rate, frames_per_chunk, type, subcomponents: List["Component"] = [], name="filter", control_tag="filter"):
         super().__init__(sample_rate, frames_per_chunk, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
+        self.type = type
         self.filter_order = 2
         self.cutoff_frequency = 20000.0
         self.b, self.a = self.compute_coefficients()
         self.zi = self.compute_initial_conditions()
-        self.type = "lowpass"
     
     def __iter__(self):
         self.subcomponent_iter = iter(self.subcomponents[0]) # one subcomponent. apply to mixer if global
@@ -31,7 +31,7 @@ class Filter(Component):
             return next(self.subcomponent_iter)
     
     def __deepcopy__(self, memo):
-        copy = Filter(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
+        copy = Filter(self.sample_rate, self.frames_per_chunk, self.type, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         copy.cutoff_frequency = self.cutoff_frequency
         self.log.info(f"deep copied filter {self.name} with active {self.active} and freq {self.cutoff_frequency}")
@@ -69,7 +69,7 @@ class Filter(Component):
     def compute_coefficients(self):
         nyquist = self.sample_rate * 0.5
         normalized_cutoff = self.cutoff_frequency / nyquist
-        b, a = butter(self.filter_order, normalized_cutoff, btype="lowpass", analog=False) # {‘lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’}
+        b, a = butter(self.filter_order, normalized_cutoff, btype=self.type, analog=False) # {‘lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’}
         return b, a
 
     def compute_initial_conditions(self):
