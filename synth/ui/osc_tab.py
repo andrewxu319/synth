@@ -65,8 +65,8 @@ class OscillatorSection(QtWidgets.QWidget):
         gain_dial.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum)
         gain_dial.setRange(0, 127)
         gain_dial.setSingleStep(1)
-        gain_dial.valueChanged.connect(self.set_gain)
         gain_dial.setMinimumSize(1,1)
+        gain_dial.valueChanged.connect(self.set_gain)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Osc {number}"))
         layout.addWidget(active_checkbox)

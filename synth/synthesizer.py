@@ -55,28 +55,28 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.log.info("Got exit command.")
                 self.stream_player.stop()
                 self.should_run = False
-            case ["note_on", "-n", note, "-c", channel]:
+            case [sender, "note_on", "-n", note, "-c", channel]:
                 int_note = int(note)
                 int_channel = int(channel)
                 note_name = midi.note_names[int_note]
-                self.note_on(int_note, int_channel)
+                self.note_on(sender, int_note, int_channel)
                 self.log.info(f"Note on {note_name} ({int_note}), chan {int_channel}")
-            case ["note_off", "-n", note, "-c", channel]:
+            case [sender, "note_off", "-n", note, "-c", channel]:
                 int_note = int(note)
                 int_channel = int(channel)
                 note_name = midi.note_names[int_note]
-                self.note_off(int_note, int_channel)
+                self.note_off(sender, int_note, int_channel)
                 self.log.info(f"Note off {note_name} ({int_note}), chan {int_channel}")
-            case ["control_change", "-c", channel, "-n", cc_number, "-v", value]:
+            case [sender, "control_change", "-c", channel, "-n", cc_number, "-v", value]:
                 int_channel = int(channel)
                 int_cc_number = int(cc_number)
                 int_value = int(value)
-                self.control_change_handler(int_channel, int_cc_number, int_value)
+                self.control_change_handler(sender, int_channel, int_cc_number, int_value)
             case _:
                 self.log.info(f"Unknown MIDI message: {message}")
     
-    def control_change_handler(self, channel: int, cc_number: int, value: int): # prob j change the volume? go to Chain, search by gain, multiply by value
-        self.log.info(f"Control Change: channel {channel}, CC {cc_number}, value {value}")
+    def control_change_handler(self, sender: str, channel: int, cc_number: int, value: int): # prob j change the volume? go to Chain, search by gain, multiply by value
+        self.log.info(f"Control Change: sender {sender}, channel {channel}, CC {cc_number}, value {value}")
         logging.info(Implementation.OSC_1_AMP.value + 1)
         match cc_number:
             case Implementation.OSC_1_AMP.value:
@@ -173,7 +173,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
             num_active_voices = 0
     
-    def note_on(self, note: int, channel: int):
+    def note_on(self, sender: str, note: int, channel: int):
         """
         Set a voice on with the given note.
         If there are no unused voices, drop the voice that has been on for the longest and use that voice
@@ -193,7 +193,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
     
-    def note_off(self, note: int, channel: int):
+    def note_off(self, sender: str, note: int, channel: int):
         """
         Find the voice playing the given note and turn it off.
         """

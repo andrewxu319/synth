@@ -35,21 +35,20 @@ class UiListener(threading.Thread):
             if msg := self.ui_mailbox.get(): # "if inport.receive() returns a value, assign it to a variable named msg".
                 match msg["type"]:
                     case "note_on":
-                        ctrl_msg = mb.builder().note_on().with_note(msg["note"]).on_channel(msg["channel"]).build() # builder() has its own methods with_note() and on_channel()
+                        ctrl_msg = mb.builder().sender("ui").note_on().with_note(msg["note"]).on_channel(msg["channel"]).build() # builder() has its own methods with_note() and on_channel()
                         self.synth_mailbox.put(ctrl_msg)
                     case "note_off":
-                        ctrl_msg = mb.builder().note_off().with_note(msg["note"]).on_channel(msg["channel"]).build() # builder() has its own methods with_note() and on_channel()
+                        ctrl_msg = mb.builder().sender("ui").note_off().with_note(msg["note"]).on_channel(msg["channel"]).build() # builder() has its own methods with_note() and on_channel()
                         self.synth_mailbox.put(ctrl_msg)
                     case "control_change":
                         control = Implementation[msg["control_implementation"]].value
-                        print(control)
-                        ctrl_msg = mb.builder().control_change().on_channel(msg["channel"]).with_cc_number(control).with_value(msg["value"]).build()
+                        ctrl_msg = mb.builder().sender("ui").control_change().on_channel(msg["channel"]).with_cc_number(control).with_value(msg["value"]).build()
                         self.synth_mailbox.put(ctrl_msg)
                     case "stop":
                         self.log.info("Received midi STOP message")
                     case _:
                         self.log.info(f"Matched unknown MIDI message: {msg}")
-            
+                        
             # Receive MIDI messages from thread_mailbox / interface (only exit message)
             # get_nowait raises queue.Empty exception if there is nothing in the queue
             # We don't want to block this thread checking for thread command messages
