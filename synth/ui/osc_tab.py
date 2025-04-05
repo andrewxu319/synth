@@ -51,6 +51,7 @@ from .widgets.color import Color
 #         qp.drawEllipse(handleRect)
 
 class OscillatorSection(QtWidgets.QWidget):
+    # (later type), active, gain, low pass, high pass
     def __init__(self, number, ui_listener_mailbox):
         super().__init__()
         self.number = number
@@ -62,21 +63,43 @@ class OscillatorSection(QtWidgets.QWidget):
         active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
 
         self.gain_dial = QtWidgets.QDial()
-        self.gain_dial.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum)
         self.gain_dial.setRange(0, 127)
         self.gain_dial.setSingleStep(1)
         self.gain_dial.setMinimumSize(1,1)
         self.gain_dial.sliderMoved.connect(self.set_gain)
+
+        self.hpf_dial = QtWidgets.QDial()
+        self.hpf_dial.setRange(0, 127)
+        self.hpf_dial.setSingleStep(1)
+        self.hpf_dial.setMinimumSize(1,1)
+        self.hpf_dial.sliderMoved.connect(self.set_hpf)
+
+        self.lpf_dial = QtWidgets.QDial()
+        self.lpf_dial.setRange(0, 127)
+        self.lpf_dial.setSingleStep(1)
+        self.lpf_dial.setMinimumSize(1,1)
+        self.lpf_dial.sliderMoved.connect(self.set_lpf)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Osc {number}"))
         layout.addWidget(active_checkbox)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Gain:"))
         layout.addWidget(self.gain_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"HPF Freq:"))
+        layout.addWidget(self.hpf_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"LPF Freq:"))
+        layout.addWidget(self.lpf_dial)
 
         self.setLayout(layout)
-        # (later type), active, gain, low pass, high pass
+
+        # Events
+        self.mouseReleaseEvent = self.switch_active
     
+    def switch_active(self, event):
+        print(self.number)
+
     def set_gain(self, value):
         self.ui_listener_mailbox.put({
             "type": "control_change",
@@ -84,6 +107,12 @@ class OscillatorSection(QtWidgets.QWidget):
             "control_implementation": f"OSC_{self.number}_AMP",
             "value": value
         })
+    
+    def set_hpf(self, value):
+        pass
+
+    def set_lpf(self, value):
+        pass
 
 class OscTab(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
@@ -104,7 +133,7 @@ class OscTab(QtWidgets.QWidget):
         for i in range(5):
             self.osc_list.append(OscillatorSection(str(i + 1), self.ui_listener_mailbox))
             osc_section.addWidget(self.osc_list[i], i, 0)
-
+        
         top_section.addLayout(osc_section, 3)
 
         filter_section = Color("Yellow")
@@ -118,3 +147,5 @@ class OscTab(QtWidgets.QWidget):
 
         # Central widget
         self.setLayout(layout)
+
+    
