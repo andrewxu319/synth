@@ -51,34 +51,34 @@ from .widgets.color import Color
 #         qp.drawEllipse(handleRect)
 
 class OscillatorSection(QtWidgets.QWidget):
-    def __init__(self, number, mailbox):
+    def __init__(self, number, ui_listener_mailbox):
         super().__init__()
         self.number = number
-        self.mailbox = mailbox
+        self.ui_listener_mailbox = ui_listener_mailbox
 
         layout = QtWidgets.QHBoxLayout()
 
         active_checkbox = QtWidgets.QCheckBox()
         active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
 
-        gain_dial = QtWidgets.QDial()
-        gain_dial.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum)
-        gain_dial.setRange(0, 127)
-        gain_dial.setSingleStep(1)
-        gain_dial.setMinimumSize(1,1)
-        gain_dial.valueChanged.connect(self.set_gain)
+        self.gain_dial = QtWidgets.QDial()
+        self.gain_dial.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum)
+        self.gain_dial.setRange(0, 127)
+        self.gain_dial.setSingleStep(1)
+        self.gain_dial.setMinimumSize(1,1)
+        self.gain_dial.sliderMoved.connect(self.set_gain)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Osc {number}"))
         layout.addWidget(active_checkbox)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Gain:"))
-        layout.addWidget(gain_dial)
+        layout.addWidget(self.gain_dial)
 
         self.setLayout(layout)
         # (later type), active, gain, low pass, high pass
     
     def set_gain(self, value):
-        self.mailbox.put({
+        self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
             "control_implementation": f"OSC_{self.number}_AMP",
@@ -86,9 +86,9 @@ class OscillatorSection(QtWidgets.QWidget):
         })
 
 class OscTab(QtWidgets.QWidget):
-    def __init__(self, mailbox):
+    def __init__(self, ui_listener_mailbox):
         super().__init__()
-        self.mailbox = mailbox
+        self.ui_listener_mailbox = ui_listener_mailbox
 
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
@@ -100,11 +100,10 @@ class OscTab(QtWidgets.QWidget):
         ## Osc section
         osc_section = QtWidgets.QGridLayout()
 
-        osc_section.addWidget(OscillatorSection("1", self.mailbox), 0, 0)
-        osc_section.addWidget(OscillatorSection("2", self.mailbox), 1, 0)
-        osc_section.addWidget(OscillatorSection("3", self.mailbox), 2, 0)
-        osc_section.addWidget(OscillatorSection("4", self.mailbox), 3, 0)
-        osc_section.addWidget(OscillatorSection("5", self.mailbox), 4, 0)
+        self.osc_list = []
+        for i in range(5):
+            self.osc_list.append(OscillatorSection(str(i + 1), self.ui_listener_mailbox))
+            osc_section.addWidget(self.osc_list[i], i, 0)
 
         top_section.addLayout(osc_section, 3)
 

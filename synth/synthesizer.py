@@ -17,14 +17,16 @@ from .synthesis.signal.fx.filter import Filter
 from .synthesis.signal.fx.delay import Delay
 from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
+from .ui.main_window import Ui
 
 class Synthesizer(threading.Thread): # each synth in separate thread??
-    def __init__(self, sample_rate: int, frames_per_chunk: int, mailbox: Queue, num_voices: int, output_device) -> None: # mailbox = synth_mailbox
+    def __init__(self, sample_rate: int, frames_per_chunk: int, mailbox: Queue, ui: Ui, num_voices: int, output_device) -> None: # mailbox = synth_mailbox
         super().__init__(name="Synthesizer Thread")
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.mailbox = mailbox
+        self.ui = ui
         self.num_voices = num_voices
         self.should_run = True
 
@@ -80,42 +82,42 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         logging.info(Implementation.OSC_1_AMP.value + 1)
         match cc_number:
             case Implementation.OSC_1_AMP.value:
-                self.set_gain(0, value)
+                self.set_gain(sender, 0, value)
                 self.log.info(f"Gain 1 set: {value}")
             case Implementation.OSC_2_AMP.value:
-                self.set_gain(1, value)
+                self.set_gain(sender, 1, value)
                 self.log.info(f"Gain 2 set: {value}")
             case Implementation.OSC_3_AMP.value:
-                self.set_gain(2, value)
+                self.set_gain(sender, 2, value)
                 self.log.info(f"Gain 3 set: {value}")
             case Implementation.OSC_4_AMP.value:
-                self.set_gain(3, value)
+                self.set_gain(sender, 3, value)
                 self.log.info(f"Gain 4 set: {value}")
             case Implementation.OSC_5_AMP.value:
-                self.set_gain(4, value)
+                self.set_gain(sender, 4, value)
                 self.log.info(f"Gain 5 set: {value}")
 
             case Implementation.lpf_1_CUTOFF.value:
-                self.set_lpf_cutoff(0, value)
+                self.set_lpf_cutoff(sender, 0, value)
                 self.log.info(f"lpf 1 set: {value}")
             case Implementation.lpf_2_CUTOFF.value:
-                self.set_lpf_cutoff(1, value)
+                self.set_lpf_cutoff(sender, 1, value)
                 self.log.info(f"lpf 2 set: {value}")
             case Implementation.lpf_3_CUTOFF.value:
-                self.set_lpf_cutoff(2, value)
+                self.set_lpf_cutoff(sender, 2, value)
                 self.log.info(f"lpf 3 set: {value}")
             case Implementation.lpf_4_CUTOFF.value:
-                self.set_lpf_cutoff(3, value)
+                self.set_lpf_cutoff(sender, 3, value)
                 self.log.info(f"lpf 4 set: {value}")
             case Implementation.lpf_5_CUTOFF.value:
-                self.set_lpf_cutoff(4, value)
+                self.set_lpf_cutoff(sender, 4, value)
                 self.log.info(f"lpf 5 set: {value}")
             
             case Implementation.DELAY_TIME.value:
-                self.set_delay_time(value)
+                self.set_delay_time(sender, value)
                 self.log.info(f"Delay time set: {value}")
             case Implementation.DELAY_FEEDBACK.value:
-                self.set_delay_feedback(value)
+                self.set_delay_feedback(sender, value)
                 self.log.info(f"Delay feedback set: {value}")
     
     def set_up_signal_chain(self) -> Chain:
@@ -210,31 +212,33 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         return hash(f"{note}{channel}")
     
-    def set_gain(self, number: int, cc_value: int):
+    def set_gain(self, sender: str, number: int, cc_value: int):
+        if sender == "midi":
+            self.ui.window.osc_tab.osc_list[number].gain_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
             for component in components:
                 component.amplitude = self.amp_values[cc_value]
     
-    def set_lpf_cutoff(self, number: int, cc_value: int):
+    def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
                 component.cutoff_frequency = self.filter_cutoff_values[cc_value]
     
-    def set_delay_time(self, cc_value: int):
+    def set_delay_time(self, sender: str, cc_value: int):
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.delay_time = self.delay_time_values[cc_value]
 
-    def set_delay_feedback(self, cc_value: int):
+    def set_delay_feedback(self, sender: str, cc_value: int):
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.feedback = self.delay_feedback_values[cc_value]
     
-    def set_delay_wet(self, cc_value: int):
+    def set_delay_wet(self, sender: str, cc_value: int):
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:

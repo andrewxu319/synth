@@ -20,9 +20,9 @@ class Color(QtWidgets.QWidget):
         self.setPalette(palette)
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, mailbox):
+    def __init__(self, ui_listener_mailbox):
         super().__init__()
-        self.mailbox = mailbox
+        self.ui_listener_mailbox = ui_listener_mailbox
         self.log = logging.getLogger(__name__)
 
         self.setWindowTitle("Synth")
@@ -32,7 +32,9 @@ class MainWindow(QtWidgets.QMainWindow):
         tabs = QtWidgets.QTabWidget()
         tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition.North)
 
-        tabs.addTab(OscTab(self.mailbox), "Osc")
+        self.osc_tab = OscTab(self.ui_listener_mailbox)
+
+        tabs.addTab(self.osc_tab, "Osc")
         tabs.addTab(Color("orange"), "FX")
 
         self.setCentralWidget(tabs)
@@ -47,15 +49,15 @@ class MainWindow(QtWidgets.QMainWindow):
         os._exit(1)
 
 class Ui(threading.Thread):
-    def __init__(self, mailbox):
+    def __init__(self, ui_listener_mailbox):
         super().__init__(name="UI Thread")
-        self.mailbox = mailbox
+        self.ui_listener_mailbox = ui_listener_mailbox
     
     def run(self):
         app = QtWidgets.QApplication([])
 
-        window = MainWindow(self.mailbox)
-        window.show()
+        self.window = MainWindow(self.ui_listener_mailbox)
+        self.window.show()
 
         app.exec()
 

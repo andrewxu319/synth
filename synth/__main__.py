@@ -41,15 +41,15 @@ if __name__ == "__main__":
 
     ui_listener = UiListener(thread_mailbox, ui_listener_mailbox, synth_mailbox)
     
-    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, 4, settings.output_device)
-
     ui = Ui(ui_listener_mailbox)
+
+    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, ui, 4, settings.output_device)
 
     try: # our two threads
         midi_listener.start()
         ui_listener.start()
-        synthesizer.start()
         ui.start()
+        synthesizer.start()
         while True:
             sleep(1)
     except KeyboardInterrupt:
