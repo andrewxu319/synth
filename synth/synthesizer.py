@@ -74,8 +74,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 int_cc_number = int(cc_number)
                 int_value = int(value)
                 self.control_change_handler(sender, int_channel, int_cc_number, int_value)
-            case [sender, "set_active", "-c", channel, "-n", number, "-v", value]:
-                self.set_active(sender, int(channel), int(number), value=="True")
+            case [sender, "set_active", "-c", channel, "-o", component, "-v", value]:
+                self.set_active(sender, int(channel), component, value=="True")
             case _:
                 self.log.info(f"Unknown MIDI message: {message}")
     
@@ -105,7 +105,6 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case Implementation.HPF_CUTOFF.value:
                 self.set_hpf_cutoff(sender, self.ui.window.osc_tab.focused_osc.number, value)
                 self.log.info(f"hpf {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
-
             case Implementation.LPF_CUTOFF.value:
                 self.set_lpf_cutoff(sender, self.ui.window.osc_tab.focused_osc.number, value)
                 self.log.info(f"lpf {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
@@ -116,6 +115,9 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case Implementation.DELAY_FEEDBACK.value:
                 self.set_delay_feedback(sender, value)
                 self.log.info(f"Delay feedback set: {value}")
+            case Implementation.DELAY_WET.value:
+                self.set_delay_wet(sender, value)
+                self.log.info(f"Delay wet set: {value}")
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
@@ -225,37 +227,56 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 component.amplitude = self.amp_values[cc_value]
     
     def set_hpf_cutoff(self, sender: str, number: int, cc_value: int):
+        if sender == "midi":
+            self.ui.window.osc_tab.osc_list[number].hpf_cutoff_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
                 component.cutoff_frequency = self.filter_cutoff_values[cc_value]
 
     def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
+        if sender == "midi":
+            self.ui.window.osc_tab.osc_list[number].lpf_cutoff_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
                 component.cutoff_frequency = self.filter_cutoff_values[cc_value]
     
     def set_delay_time(self, sender: str, cc_value: int):
+        if sender == "midi":
+            self.ui.window.fx_tab.delay_fx.delay_time_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.delay_time = self.delay_time_values[cc_value]
 
     def set_delay_feedback(self, sender: str, cc_value: int):
+        if sender == "midi":
+            self.ui.window.fx_tab.delay_fx.delay_feedback_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.feedback = self.delay_feedback_values[cc_value]
     
     def set_delay_wet(self, sender: str, cc_value: int):
+        if sender == "midi":
+            self.ui.window.fx_tab.delay_fx.delay_wet_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
                 component.wet = self.delay_wet_values[cc_value]
     
-    def set_active(self, sender, channel, number, value):
-        for voice in self.voices:
-            gain_components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
-            for gain_component in gain_components:
-                gain_component.subcomponents[0].active = value
+    def set_active(self, sender, channel, component, value):
+        match component.split("_"):
+            case ["osc", number]:
+                for voice in self.voices:
+                    gain_components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
+                    for gain_component in gain_components:
+                        gain_component.subcomponents[0].active = value
+            case ["delay"]:
+                for voice in self.voices:
+                    components = voice.signal_chain.get_components_by_control_tag(f"delay")
+                    for component in components:
+                        component.active = value
+            case _:
+                raise "Unknown component '{component}'"

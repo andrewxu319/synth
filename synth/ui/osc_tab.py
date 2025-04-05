@@ -1,55 +1,10 @@
 import logging
-from functools import partial
 
 import PyQt6.QtCore as QtCore
 import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 
 from .widgets.color import Color
-
-# class Dial(QtWidgets.QDial):
-#     def __init__(self):
-#         super().__init__()
-    
-#     def paintEvent(self, event):
-#         opt = QtWidgets.QStyleOptionSlider()
-#         self.initStyleOption(opt)
-
-#         # construct a QRectF that uses the minimum between width and height, 
-#         # and adds some margins for better visual separation
-#         # this is partially taken from the fusion style helper source
-#         width = opt.rect.width()
-#         height = opt.rect.height()
-#         r = min(width, height) / 2
-#         r -= r / 50
-#         d_ = r / 6
-#         dx = opt.rect.x() + d_ + (width - 2 * r) / 2 + 1
-#         dy = opt.rect.y() + d_ + (height - 2 * r) / 2 + 1
-#         br = QtCore.QRectF(dx + .5, dy + .5, 
-#             int(r * 2 - 2 * d_ - 2), 
-#             int(r * 2 - 2 * d_ - 2))
-
-#         penColor = self.palette().dark().color()
-#         qp = QtGui.QPainter(self)
-#         qp.setRenderHints(qp.RenderHint.Antialiasing)
-#         qp.setPen(QtGui.QPen(penColor, 4))
-#         qp.drawEllipse(br)
-
-#         # find the "real" value ratio between minimum and maximum
-#         realValue = (self.value() - self.minimum()) / (self.maximum() - self.minimum())
-#         # compute the angle at which the dial handle should be placed, assuming
-#         # a range between 240° and 300° (moving clockwise)
-#         angle = 240 - 300 * realValue
-#         # create a polar line for the position of the handle; this can also
-#         # be done using the math module with some performance improvement
-#         line = QtCore.QLineF.fromPolar(r * .6, angle)
-#         line.translate(br.center())
-#         ds = r / 5
-#         # create the handle rect and position it at the end of the polar line
-#         handleRect = QtCore.QRectF(0, 0, ds, ds)
-#         handleRect.moveCenter(line.p2())
-#         qp.setPen(QtGui.QPen(penColor, 2))
-#         qp.drawEllipse(handleRect)
 
 class OscillatorSection(QtWidgets.QWidget):
     # (later type), active, gain, low pass, high pass
@@ -62,9 +17,8 @@ class OscillatorSection(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
 
-        active_checkbox = QtWidgets.QCheckBox()
-        active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
-        active_checkbox.stateChanged.connect(self.set_active)
+        self.active_checkbox = QtWidgets.QCheckBox()
+        self.active_checkbox.stateChanged.connect(self.set_active)
 
         self.gain_dial = QtWidgets.QDial()
         self.gain_dial.setRange(0, 127)
@@ -72,37 +26,43 @@ class OscillatorSection(QtWidgets.QWidget):
         self.gain_dial.setMinimumSize(1,1)
         self.gain_dial.sliderMoved.connect(self.set_gain)
 
-        self.hpf_dial = QtWidgets.QDial()
-        self.hpf_dial.setRange(0, 127)
-        self.hpf_dial.setSingleStep(1)
-        self.hpf_dial.setMinimumSize(1,1)
-        self.hpf_dial.sliderMoved.connect(self.set_hpf)
+        self.hpf_cutoff_dial = QtWidgets.QDial()
+        self.hpf_cutoff_dial.setRange(0, 127)
+        self.hpf_cutoff_dial.setSingleStep(1)
+        self.hpf_cutoff_dial.setMinimumSize(1,1)
+        self.hpf_cutoff_dial.sliderMoved.connect(self.set_hpf)
 
-        self.lpf_dial = QtWidgets.QDial()
-        self.lpf_dial.setRange(0, 127)
-        self.lpf_dial.setSingleStep(1)
-        self.lpf_dial.setMinimumSize(1,1)
-        self.lpf_dial.sliderMoved.connect(self.set_lpf)
+        self.lpf_cutoff_dial = QtWidgets.QDial()
+        self.lpf_cutoff_dial.setRange(0, 127)
+        self.lpf_cutoff_dial.setSingleStep(1)
+        self.lpf_cutoff_dial.setMinimumSize(1,1)
+        self.lpf_cutoff_dial.sliderMoved.connect(self.set_lpf)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Osc {number + 1}"))
-        layout.addWidget(active_checkbox)
+        layout.addWidget(self.active_checkbox)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Gain:"))
         layout.addWidget(self.gain_dial)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"HPF Freq:"))
-        layout.addWidget(self.hpf_dial)
+        layout.addWidget(self.hpf_cutoff_dial)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"LPF Freq:"))
-        layout.addWidget(self.lpf_dial)
+        layout.addWidget(self.lpf_cutoff_dial)
 
         self.setLayout(layout)
 
+        # Initial conditions
+        self.active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
+        self.gain_dial.setValue(127)
+        self.hpf_cutoff_dial.setValue(0)
+        self.lpf_cutoff_dial.setValue(127)
+
     def set_active(self, state):
         self.ui_listener_mailbox.put({
-            "type": "ui_message",
+            "type": "set_active",
             "channel": 0,
-            "number": self.number,
+            "component": f"osc_{self.number}",
             "value": state == 2 # use midi cc instead?
         })
 

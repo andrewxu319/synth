@@ -7,6 +7,7 @@ import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 
 from .osc_tab import OscTab
+from .fx_tab import FxTab
 from .menu import Menu
 
 class Color(QtWidgets.QWidget):
@@ -33,9 +34,10 @@ class MainWindow(QtWidgets.QMainWindow):
         tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition.North)
 
         self.osc_tab = OscTab(self.ui_listener_mailbox)
+        self.fx_tab = FxTab(self.ui_listener_mailbox)
 
         tabs.addTab(self.osc_tab, "Osc")
-        tabs.addTab(Color("orange"), "FX")
+        tabs.addTab(self.fx_tab, "FX")
 
         self.setCentralWidget(tabs)
         

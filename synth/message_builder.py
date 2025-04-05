@@ -165,15 +165,8 @@ class UIParameterBuilder(MessageBuilder):
     
         return UIParameterBuilder(self.message)
     
-    def with_osc_number(self, value):
-        try:
-            int_val = int(value)
-            if int_val < 0 or int_val > 4:
-                raise ValueError
-            self.message += f" -n {int_val}"
-        except ValueError:
-            self.log.error(f"Unable to set oscillator number {value}! Values are from 0-4")
-            raise
+    def with_component(self, value):
+        self.message += f" -o {value}"
             
         return UIParameterBuilder(self.message)
 
