@@ -1,4 +1,5 @@
-import threading
+import logging
+from functools import partial
 
 import PyQt6.QtCore as QtCore
 import PyQt6.QtGui as QtGui
@@ -56,6 +57,8 @@ class OscillatorSection(QtWidgets.QWidget):
         super().__init__()
         self.number = number
         self.ui_listener_mailbox = ui_listener_mailbox
+        self.focus = False
+        self.log = logging.getLogger(__name__)
 
         layout = QtWidgets.QHBoxLayout()
 
@@ -94,12 +97,6 @@ class OscillatorSection(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-        # Events
-        self.mouseReleaseEvent = self.switch_active
-    
-    def switch_active(self, event):
-        print(self.number)
-
     def set_gain(self, value):
         self.ui_listener_mailbox.put({
             "type": "control_change",
@@ -133,6 +130,13 @@ class OscTab(QtWidgets.QWidget):
         for i in range(5):
             self.osc_list.append(OscillatorSection(str(i + 1), self.ui_listener_mailbox))
             osc_section.addWidget(self.osc_list[i], i, 0)
+
+        self.osc_list[0].mouseReleaseEvent = lambda _: self.focus(0) # loop doesnt work??
+        self.osc_list[1].mouseReleaseEvent = lambda _: self.focus(1)
+        self.osc_list[2].mouseReleaseEvent = lambda _: self.focus(2)
+        self.osc_list[3].mouseReleaseEvent = lambda _: self.focus(3)
+        self.osc_list[4].mouseReleaseEvent = lambda _: self.focus(4)
+
         
         top_section.addLayout(osc_section, 3)
 
@@ -147,5 +151,18 @@ class OscTab(QtWidgets.QWidget):
 
         # Central widget
         self.setLayout(layout)
+
+    def focus(self, number):
+        focused_osc = self.osc_list[number]
+        focused_osc.focus = True
+        focused_osc.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
+        focused_osc.setStyleSheet('background-color: #fcf6cc')
+
+        remaining_numbers = list(range(5))
+        remaining_numbers.pop(number)
+        for i in remaining_numbers:
+            self.osc_list[i].setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, False)
+            self.osc_list[i].setStyleSheet('background-color: #ffffff')
+
 
     
