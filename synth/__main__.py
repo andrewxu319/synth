@@ -12,8 +12,8 @@ from .synthesizer import Synthesizer
 import synth.midi as midi
 from synth.midi.midi_listener import MidiListener
 from synth.ui.ui_listener import UiListener
-
 from .ui.main_window import Ui
+from .ui.preset_handler import PresetHandler
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -45,6 +45,8 @@ if __name__ == "__main__":
 
     synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, ui, 4, settings.output_device)
 
+    preset_handler = PresetHandler(synthesizer, "presets")
+
     try: # our two threads
         midi_listener.start()
         ui_listener.start()
@@ -53,6 +55,9 @@ if __name__ == "__main__":
         while True:
             sleep(1)
     except KeyboardInterrupt:
+        preset_handler.save("test")
+        print(preset_handler.load("test"))
+        
         log.info("Caught keyboard interrupt. Exiting the program.")
         os._exit(1)
     

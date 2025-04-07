@@ -14,7 +14,7 @@ class Delay(Component):
         self.delay_frames = int(self.delay_buffer_length * self.sample_rate)
         self.delay_time = 0.0
         self.delay_buffer = np.zeros(self.delay_frames, np.float32)
-        self.delay_time_start_index = self.delay_frames - int(self.delay_time * self.sample_rate)
+        self.time_start_index = self.delay_frames - int(self.delay_time * self.sample_rate)
         self.feedback = 0.0
         self.wet = 0.0
     
@@ -27,7 +27,7 @@ class Delay(Component):
         wet_mix = dry_mix
 
         if self.active and self.feedback > 0.0 and self.delay_time > 0.0 and self.wet > 0.0:
-            delayed_signal = self.delay_buffer[self.delay_time_start_index: self.delay_time_start_index + self.frames_per_chunk]
+            delayed_signal = self.delay_buffer[self.time_start_index: self.time_start_index + self.frames_per_chunk]
             # print(delayed_signal)
             while len(delayed_signal) < self.frames_per_chunk:
                 delayed_signal = np.concatenate((delayed_signal, self.delay_buffer[:self.frames_per_chunk - len(delayed_signal)]))
@@ -58,5 +58,5 @@ class Delay(Component):
 
     @delay_time.setter
     def delay_time(self, value):
-        self._delay_time = value
-        self.delay_time_start_index = self.delay_frames - int(self.delay_time * self.sample_rate)
+        self._delay_time = float(value)
+        self.time_start_index = self.delay_frames - int(self.delay_time * self.sample_rate)

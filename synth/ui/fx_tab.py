@@ -21,19 +21,19 @@ class DelayFx(QtWidgets.QWidget):
         self.delay_time_dial.setRange(0, 127)
         self.delay_time_dial.setSingleStep(1)
         self.delay_time_dial.setMinimumSize(1,1)
-        self.delay_time_dial.sliderMoved.connect(self.set_delay_time)
+        self.delay_time_dial.valueChanged.connect(self.set_delay_time) # might need to change to sliderReleased
 
         self.delay_feedback_dial = QtWidgets.QDial()
         self.delay_feedback_dial.setRange(0, 127)
         self.delay_feedback_dial.setSingleStep(1)
         self.delay_feedback_dial.setMinimumSize(1,1)
-        self.delay_feedback_dial.sliderMoved.connect(self.set_delay_feedback)
+        self.delay_feedback_dial.valueChanged.connect(self.set_delay_feedback)
 
         self.delay_wet_dial = QtWidgets.QDial()
         self.delay_wet_dial.setRange(0, 127)
         self.delay_wet_dial.setSingleStep(1)
         self.delay_wet_dial.setMinimumSize(1,1)
-        self.delay_wet_dial.sliderMoved.connect(self.set_delay_wet)
+        self.delay_wet_dial.valueChanged.connect(self.set_delay_wet)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Delay"))
         layout.addWidget(self.active_checkbox)

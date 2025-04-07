@@ -132,7 +132,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # Defines parameters
         # RLY DONT NEED THIS PART LOWK
         self.oscillator_active_status = [True, True, True, True, True]
-        self.amplitude_status = [0.0, 0.0, 0.0, 1.0, 0.0] # initial condition. implement settings saving later
+        self.gain_amplitude_status = [1.0, 1.0, 1.0, 1.0, 1.0] # initial condition. implement settings saving later
         self.hpf_active_status = [True, True, True, True, True]
         self.hpf_cutoff_status = [200, 200, 200, 200, 200]
         self.lpf_active_status = [True, True, True, True, True]
@@ -147,15 +147,15 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             # print("woah!")
             # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
         for i in range(len(gains)):
-            gains[i].amplitude = self.amplitude_status[i] # gain only has one subcomponent
+            gains[i].amplitude = self.gain_amplitude_status[i] # gain only has one subcomponent
         for i in range(len(hpfs)):
             hpfs[i].active = self.hpf_active_status[i]
-            hpfs[i].cutoff_frequency = self.hpf_cutoff_status[i]
-            logging.info(f"hpf FREQ active {hpfs[i].active} frequency {hpfs[i].cutoff_frequency}")
+            hpfs[i].cutoff = self.hpf_cutoff_status[i]
+            logging.info(f"hpf FREQ active {hpfs[i].active} frequency {hpfs[i].cutoff}")
         for i in range(len(lpfs)):
             lpfs[i].active = self.lpf_active_status[i]
-            lpfs[i].cutoff_frequency = self.lpf_cutoff_status[i]
-            logging.info(f"lpf FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff_frequency}")
+            lpfs[i].cutoff = self.lpf_cutoff_status[i]
+            logging.info(f"lpf FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff}")
         delay.active = self.delay_active_status
         delay.delay_time = self.delay_time_status
         delay.feedback = self.delay_feedback_status
@@ -232,7 +232,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
-                component.cutoff_frequency = self.filter_cutoff_values[cc_value]
+                component.cutoff = self.filter_cutoff_values[cc_value]
 
     def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
         if sender == "midi":
@@ -240,7 +240,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
-                component.cutoff_frequency = self.filter_cutoff_values[cc_value]
+                component.cutoff = self.filter_cutoff_values[cc_value]
     
     def set_delay_time(self, sender: str, cc_value: int):
         if sender == "midi":

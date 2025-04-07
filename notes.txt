@@ -20,7 +20,7 @@ x delay wet dry
 x instant exit
 x high pass filters
 - sqlite
-- ui (tkinter)
+- ui
 - anti aliasing
 
 https://github.com/Akascape/TkDial

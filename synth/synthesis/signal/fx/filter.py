@@ -13,7 +13,7 @@ class Filter(Component):
         self.log = logging.getLogger(__name__)
         self.type = type
         self.filter_order = 2
-        self.cutoff_frequency = 20000.0
+        self.cutoff = 20000.0
         self.b, self.a = self.compute_coefficients()
         self.zi = self.compute_initial_conditions()
     
@@ -33,8 +33,8 @@ class Filter(Component):
     def __deepcopy__(self, memo):
         copy = Filter(self.sample_rate, self.frames_per_chunk, self.type, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
-        copy.cutoff_frequency = self.cutoff_frequency
-        self.log.info(f"deep copied filter {self.name} with active {self.active} and freq {self.cutoff_frequency}")
+        copy.cutoff = self.cutoff
+        self.log.info(f"deep copied filter {self.name} with active {self.active} and freq {self.cutoff}")
         return copy
 
     # @property
@@ -50,25 +50,25 @@ class Filter(Component):
     #         self.log.error(f"Couldn't set active with value {value}")
 
     @property
-    def cutoff_frequency(self):
-        return self._cutoff_frequency
+    def cutoff(self):
+        return self._cutoff
     
-    @cutoff_frequency.setter
-    def cutoff_frequency(self, value):
+    @cutoff.setter
+    def cutoff(self, value):
         try:
             float_value = float(value)
             if float_value < 0.0:
                 raise ValueError("Cutoff frequency must be positive!")
             else:
-                self._cutoff_frequency = float_value
-                logging.info(f"Cutoff frequency set to {self.cutoff_frequency}!")
+                self._cutoff = float_value
+                logging.info(f"Cutoff frequency set to {self.cutoff}!")
                 self.b, self.a = self.compute_coefficients()
         except ValueError:
             logging.error(f"Couldn't set cutoff frequency with value {float_value}")
 
     def compute_coefficients(self):
         nyquist = self.sample_rate * 0.5
-        normalized_cutoff = self.cutoff_frequency / nyquist
+        normalized_cutoff = self.cutoff / nyquist
         b, a = butter(self.filter_order, normalized_cutoff, btype=self.type, analog=False) # {‘lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’}
         return b, a
 
