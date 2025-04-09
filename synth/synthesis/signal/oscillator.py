@@ -13,7 +13,7 @@ class Oscillator(Generator):
         self.control_tag = control_tag
         self._frequency = 0.0
         self._phase = 0.0
-        self._amplitude = 0.5
+        self._amplitude = 1.0
         self.parent_component_cannot_set_active = False
         # logging.info(f"new {self.name} created for some reason??? with active {self._active}")
 
@@ -76,7 +76,6 @@ class Oscillator(Generator):
         return self
 
     def __next__(self):
-        # self.log.info(f"Oscillator {self.name} active is {self.active}! See oscillator.py, 79") # ACTIVE CHECK
         if self.active:
             # logging.info(f"{self.name} active!")
             if self.frequency <= 0.0:
@@ -87,7 +86,7 @@ class Oscillator(Generator):
             else:
                 # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
                 sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
-                # logging.info(list(sample))
+                # logging.info(self.amplitude)
 
             self._chunk_start_time = self._chunk_end_time
             self._chunk_end_time += self._chunk_duration
@@ -101,6 +100,7 @@ class Oscillator(Generator):
         # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
         copy = Oscillator(self.sample_rate, self.buffer_size, self._formula, name=self.name, control_tag=self.control_tag)
         copy.active = self.active
+        copy.amplitude = self.amplitude
         return copy
 
 

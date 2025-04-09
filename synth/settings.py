@@ -4,5 +4,5 @@ buffer_size = 256 # https://www.reddit.com/r/reasoners/comments/ar0pcw/what_is_y
 # auto_attach = "KOMPLETE KONTROL A49 MIDI 0"
 auto_attach = "loopMIDI Port 0"
 
-output_device = 4
-# output_device = None
+# output_device = 4
+output_device = None

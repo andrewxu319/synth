@@ -13,7 +13,7 @@ class OscillatorLibrary():
             # "sine_wave_oscillator": SineWaveOscillator(sample_rate, buffer_size),
             Oscillator(sample_rate, buffer_size,
                        lambda frequency, phase, amplitude, t:
-                       np.sign(amplitude * np.sin(phase + (2 * np.pi * frequency * t))),
+                       amplitude * np.sign(np.sin(phase + (2 * np.pi * frequency * t))),
                        "SquareWaveOscillator", "osc_1"),
             Oscillator(sample_rate, buffer_size,
                        lambda frequency, phase, amplitude, t:

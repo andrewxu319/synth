@@ -14,13 +14,13 @@ class Mixer(Component):
         return self
     
     def __next__(self):
-        if self.active:
-            input_signals = [next(source_iter) for source_iter in self.source_iters]
-            mixed_signal = np.mean(input_signals, axis=0)
-            mixed_signal = np.clip(mixed_signal, -1.0, 1.0)
-            return mixed_signal.astype(np.float32)
-        else:
-            return np.zeros(self.buffer_size, dtype=np.float32)
+        # if self.active:
+        input_signals = [next(source_iter) for source_iter in self.source_iters]
+        mixed_signal = np.mean(input_signals, axis=0)
+        mixed_signal = np.clip(mixed_signal, -1.0, 1.0)
+        return mixed_signal.astype(np.float32)
+        # else:
+        #     return np.zeros(self.buffer_size, dtype=np.float32)
 
     def __deepcopy__(self, memo):
         copy = Mixer(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(component, memo) for component in self.subcomponents], name=self.name)
