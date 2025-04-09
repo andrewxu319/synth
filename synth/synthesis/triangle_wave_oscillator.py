@@ -5,8 +5,8 @@ import numpy as np
 from .sawtooth_wave_oscillator import SawtoothWaveOscillator
 
 class TriangleWaveOscillator(SawtoothWaveOscillator):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="TriangleWaveOscillator"):
-        super().__init__(sample_rate, frames_per_chunk, name=name)
+    def __init__(self, sample_rate: int, buffer_size: int, name: str="TriangleWaveOscillator"):
+        super().__init__(sample_rate, buffer_size, name=name)
         self.log = logging.getLogger(__name__)
     
     def __next__(self):
@@ -15,6 +15,6 @@ class TriangleWaveOscillator(SawtoothWaveOscillator):
         return triangle_wave.astype(np.float32)
     
     def __deepcopy__(self, memo):
-        copy = TriangleWaveOscillator(self.sample_rate, self.frames_per_chunk, name="TriangleWaveOscillator")
+        copy = TriangleWaveOscillator(self.sample_rate, self.buffer_size, name="TriangleWaveOscillator")
         copy.active = self.active
         return copy

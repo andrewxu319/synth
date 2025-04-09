@@ -5,8 +5,8 @@ from typing import Callable
 from .generator import Generator
 
 class Oscillator(Generator):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, formula: Callable, name: str="Oscillator", control_tag: str="osc"):
-        super().__init__(sample_rate, frames_per_chunk, name=name)
+    def __init__(self, sample_rate: int, buffer_size: int, formula: Callable, name: str="Oscillator", control_tag: str="osc"):
+        super().__init__(sample_rate, buffer_size, name=name)
         self.log = logging.getLogger(__name__)
         self._formula = formula
         self.name = name
@@ -70,7 +70,7 @@ class Oscillator(Generator):
             self.log.error(f"Unable to set with value {value}")
     
     def __iter__(self):
-        self._chunk_duration = self.frames_per_chunk / self.sample_rate
+        self._chunk_duration = self.buffer_size / self.sample_rate
         self._chunk_start_time = 0.0
         self._chunk_end_time = self._chunk_duration
         return self
@@ -82,11 +82,11 @@ class Oscillator(Generator):
             if self.frequency <= 0.0:
                 if self.frequency < 0.0:
                     self.log.error("Overriding negative frequency to 0")
-                sample = np.zeros(self.frames_per_chunk)
+                sample = np.zeros(self.buffer_size)
 
             else:
-                # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
-                sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.frames_per_chunk, endpoint = False))
+                # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
+                sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
                 # logging.info(list(sample))
 
             self._chunk_start_time = self._chunk_end_time
@@ -95,11 +95,11 @@ class Oscillator(Generator):
             return sample.astype(np.float32)
 
         else:
-            return np.zeros(self.frames_per_chunk, dtype=np.float32)
+            return np.zeros(self.buffer_size, dtype=np.float32)
 
     def __deepcopy__(self, memo):
         # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
-        copy = Oscillator(self.sample_rate, self.frames_per_chunk, self._formula, name=self.name, control_tag=self.control_tag)
+        copy = Oscillator(self.sample_rate, self.buffer_size, self._formula, name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         return copy
 

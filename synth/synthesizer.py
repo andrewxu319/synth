@@ -14,16 +14,17 @@ from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.fx.filter import Filter
-from .synthesis.signal.fx.delay import Delay
 from .synthesis.signal.mixer import Mixer
+from .synthesis.signal.fx.envelope import Envelope
+from .synthesis.signal.fx.delay import Delay
 from .playback.stream_player import StreamPlayer
 
 class Synthesizer(threading.Thread): # each synth in separate thread??
-    def __init__(self, sample_rate: int, frames_per_chunk: int, mailbox: Queue, num_voices: int, output_device) -> None: # mailbox = synth_mailbox
+    def __init__(self, sample_rate: int, buffer_size: int, mailbox: Queue, num_voices: int, output_device) -> None: # mailbox = synth_mailbox
         super().__init__(name="Synthesizer Thread")
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
-        self.frames_per_chunk = frames_per_chunk
+        self.buffer_size = buffer_size
         self.mailbox = mailbox
         self.num_voices = num_voices
         self.should_run = True
@@ -41,7 +42,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
         # Set up the stream player
-        self.stream_player = StreamPlayer(self.sample_rate, self.frames_per_chunk, self.generator(), output_device)
+        self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)
     
     def run(self):
         self.stream_player.play()
@@ -142,13 +143,14 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
-        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.frames_per_chunk)
+        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size)
         self.oscillators = self.oscillator_library.oscillators
-        gains = [Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
-        hpfs = [Filter(self.sample_rate, self.frames_per_chunk, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
-        lpfs = [Filter(self.sample_rate, self.frames_per_chunk, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
-        mixer = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=lpfs)
-        delay = Delay(self.sample_rate, self.frames_per_chunk, subcomponents=[mixer])
+        gains = [Gain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
+        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
+        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
+        mixer = Mixer(self.sample_rate, self.buffer_size, subcomponents=lpfs)
+        envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[mixer])
+        delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
 
         # Defines parameters
         # RLY DONT NEED THIS PART LOWK
@@ -188,7 +190,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         Generate the signal by mixing the voice outputs
         """
-        mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
+        mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
         num_active_voices = 0
         while True:
             for voice in self.voices:
@@ -199,7 +201,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk
-            mixed_next_chunk = np.zeros(self.frames_per_chunk, np.float32)
+            mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
             num_active_voices = 0
     
     def note_on(self, sender: str, note: int, channel: int):

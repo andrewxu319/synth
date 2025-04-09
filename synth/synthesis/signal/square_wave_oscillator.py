@@ -5,8 +5,8 @@ import numpy as np
 from .sine_wave_oscillator import SineWaveOscillator
 
 class SquareWaveOscillator(SineWaveOscillator):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="SquareWaveOscillator"):
-        super().__init__(sample_rate, frames_per_chunk, name=name)
+    def __init__(self, sample_rate: int, buffer_size: int, name: str="SquareWaveOscillator"):
+        super().__init__(sample_rate, buffer_size, name=name)
         self.log = logging.getLogger(__name__)
     
     def __next__(self):
@@ -21,6 +21,6 @@ class SquareWaveOscillator(SineWaveOscillator):
         return square_wave # takes chunk from SignWaveOscillator signed as output
     
     def __deepcopy__(self, memo):
-        copy = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk, name="SquareWaveOscillator")
+        copy = SquareWaveOscillator(self.sample_rate, self.buffer_size, name="SquareWaveOscillator")
         copy.active = self.active
         return copy

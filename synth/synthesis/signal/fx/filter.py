@@ -8,8 +8,8 @@ from scipy.signal import butter, lfilter, lfilter_zi # type: ignore
 from ..component import Component
 
 class Filter(Component):
-    def __init__(self, sample_rate, frames_per_chunk, type, subcomponents: List["Component"] = [], name="filter", control_tag="filter"):
-        super().__init__(sample_rate, frames_per_chunk, subcomponents, name, control_tag)
+    def __init__(self, sample_rate, buffer_size, type, subcomponents: List["Component"] = [], name="filter", control_tag="filter"):
+        super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
         self.type = type
         self.filter_order = 2
@@ -26,14 +26,14 @@ class Filter(Component):
         if self.active:
             dry_signal = next(self.subcomponent_iter)
             wet_signal, self.zi = lfilter(self.b, self.a, dry_signal, zi=self.zi)
-            # return np.zeros(self.frames_per_chunk, dtype=np.float32)
+            # return np.zeros(self.buffer_size, dtype=np.float32)
             mix = dry_signal * (1 - self.wet) + wet_signal * self.wet
             return mix.astype(np.float32)
         else:
             return next(self.subcomponent_iter)
     
     def __deepcopy__(self, memo):
-        copy = Filter(self.sample_rate, self.frames_per_chunk, self.type, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
+        copy = Filter(self.sample_rate, self.buffer_size, self.type, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         copy.cutoff = self.cutoff
         copy.wet = self.wet

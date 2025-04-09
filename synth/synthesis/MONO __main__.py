@@ -34,19 +34,19 @@ if __name__ == "__main__":
     log.info(f"Available MIDI ports: {available_ports}")
 
     # Defines components
-    osc_a = SineWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    osc_b = SquareWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    osc_c = SawtoothWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    osc_d = TriangleWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    noise = NoiseGenerator(settings.sample_rate, settings.frames_per_chunk)
+    osc_a = SineWaveOscillator(settings.sample_rate, settings.buffer_size)
+    osc_b = SquareWaveOscillator(settings.sample_rate, settings.buffer_size)
+    osc_c = SawtoothWaveOscillator(settings.sample_rate, settings.buffer_size)
+    osc_d = TriangleWaveOscillator(settings.sample_rate, settings.buffer_size)
+    noise = NoiseGenerator(settings.sample_rate, settings.buffer_size)
 
-    gain_a = Gain(settings.sample_rate, settings.frames_per_chunk, subcomponents=[osc_a])
-    gain_b = Gain(settings.sample_rate, settings.frames_per_chunk, subcomponents=[osc_b])
-    gain_c = Gain(settings.sample_rate, settings.frames_per_chunk, subcomponents=[osc_c])
-    gain_d = Gain(settings.sample_rate, settings.frames_per_chunk, subcomponents=[osc_d])
-    gain_noise = Gain(settings.sample_rate, settings.frames_per_chunk, subcomponents=[noise])
+    gain_a = Gain(settings.sample_rate, settings.buffer_size, subcomponents=[osc_a])
+    gain_b = Gain(settings.sample_rate, settings.buffer_size, subcomponents=[osc_b])
+    gain_c = Gain(settings.sample_rate, settings.buffer_size, subcomponents=[osc_c])
+    gain_d = Gain(settings.sample_rate, settings.buffer_size, subcomponents=[osc_d])
+    gain_noise = Gain(settings.sample_rate, settings.buffer_size, subcomponents=[noise])
 
-    mixer = Mixer(settings.sample_rate, settings.frames_per_chunk, subcomponents=[gain_a, gain_b, gain_c, gain_d, gain_noise])
+    mixer = Mixer(settings.sample_rate, settings.buffer_size, subcomponents=[gain_a, gain_b, gain_c, gain_d, gain_noise])
 
     # PARAMETERS
     osc_a.active = True
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     noise.amp = 0.01
 
     # Defines a stream player
-    stream_player = StreamPlayer(sample_rate=settings.sample_rate, frames_per_chunk=settings.frames_per_chunk, input_delegate=mixer)
+    stream_player = StreamPlayer(sample_rate=settings.sample_rate, buffer_size=settings.buffer_size, input_delegate=mixer)
     
     listener_mailbox = queue.Queue()
     synth_mailbox = queue.Queue()

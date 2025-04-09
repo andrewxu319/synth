@@ -6,8 +6,8 @@ import numpy as np
 from .component import Component
 
 class Mixer(Component):
-    def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List["Component"] = [], name: str="Mixer"):
-        super().__init__(sample_rate, frames_per_chunk, subcomponents, name)
+    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List["Component"] = [], name: str="Mixer"):
+        super().__init__(sample_rate, buffer_size, subcomponents, name)
     
     def __iter__(self):
         self.source_iters = [iter(component) for component in self.subcomponents]
@@ -20,10 +20,10 @@ class Mixer(Component):
             mixed_signal = np.clip(mixed_signal, -1.0, 1.0)
             return mixed_signal.astype(np.float32)
         else:
-            return np.zeros(self.frames_per_chunk, dtype=np.float32)
+            return np.zeros(self.buffer_size, dtype=np.float32)
 
     def __deepcopy__(self, memo):
-        copy = Mixer(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(component, memo) for component in self.subcomponents], name=self.name)
+        copy = Mixer(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(component, memo) for component in self.subcomponents], name=self.name)
         copy.active = self.active
         return copy
 

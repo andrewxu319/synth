@@ -2,10 +2,10 @@ import pyaudio
 import logging
 
 class StreamPlayer:
-    def __init__(self, sample_rate: int, frames_per_chunk: int, input_delegate, output_device):
+    def __init__(self, sample_rate: int, buffer_size: int, input_delegate, output_device):
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
-        self.frames_per_chunk = frames_per_chunk
+        self.buffer_size = buffer_size
         self.input_delegate = input_delegate
         self.output_device = output_device
         self.pyaudio_interface = pyaudio.PyAudio()
@@ -27,25 +27,25 @@ class StreamPlayer:
             self.log.error(f"Couldn't set sample_rate with value {value}")
 
     @property
-    def frames_per_chunk(self):
-        return self._frames_per_chunk
+    def buffer_size(self):
+        return self._buffer_size
 
-    @frames_per_chunk.setter
-    def frames_per_chunk(self, value):
+    @buffer_size.setter
+    def buffer_size(self, value):
         try:
             int_value = int(value)
             if int_value > 0:
-                self._frames_per_chunk = int_value
+                self._buffer_size = int_value
             else:
                 raise ValueError
         except ValueError:
-            self.log.error(f"Couldn't set frames_per_chunk with value {value}")
+            self.log.error(f"Couldn't set buffer_size with value {value}")
 
     @property
     def input_delegate(self):
         """
         This should be an iterator which returns the BYTES of an ndarray (aka calling tobytes() on it)
-        of size <frames_per_chunk>
+        of size <buffer_size>
         """
         return self._input_delegate
 
@@ -69,7 +69,7 @@ class StreamPlayer:
                                                               output = True,
                                                               stream_callback = self.audio_callback,
                                                               output_device_index = self.output_device, # if headphones
-                                                              frames_per_buffer = self.frames_per_chunk)  
+                                                              frames_per_buffer = self.buffer_size)  
             except OSError:
                 self.log.error(f"Output device {self.output_device} is invalid!")
                 self._output_stream = self.pyaudio_interface.open(format = pyaudio.paFloat32,
@@ -78,7 +78,7 @@ class StreamPlayer:
                 output = True,
                 stream_callback = self.audio_callback,
                 output_device_index = None, # no headphones
-                frames_per_buffer = self.frames_per_chunk)  
+                frames_per_buffer = self.buffer_size)  
         self._output_stream.start_stream()
         self.log.info(self.pyaudio_interface.get_default_output_device_info())
         # print(self.output_device)
