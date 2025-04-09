@@ -74,9 +74,9 @@ class PresetHandler:
         self.log.info(f"Successfully loaded preset {file_path}!")
 
     def autosave(self):
-        if self.file_path == "":
-            self.save("presets/autosave.json")
-            self.log.info("Autosaved!")
+        self.save("presets/autosave.json") # Save to autosave even if an active file is open---they can resave into their file if desired
+        
+        self.log.info("Autosaved!")
 
 
 
