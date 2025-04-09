@@ -24,19 +24,32 @@ class OscillatorSection(QtWidgets.QWidget):
         self.gain_dial.setRange(0, 127)
         self.gain_dial.setSingleStep(1)
         self.gain_dial.setMinimumSize(1,1)
-        self.gain_dial.sliderMoved.connect(self.set_gain)
+        self.gain_dial.valueChanged.connect(self.set_gain)
 
         self.hpf_cutoff_dial = QtWidgets.QDial()
         self.hpf_cutoff_dial.setRange(0, 127)
         self.hpf_cutoff_dial.setSingleStep(1)
         self.hpf_cutoff_dial.setMinimumSize(1,1)
-        self.hpf_cutoff_dial.sliderMoved.connect(self.set_hpf)
+        self.hpf_cutoff_dial.valueChanged.connect(self.set_hpf_cutoff)
+
+        self.hpf_wet_dial = QtWidgets.QDial()
+        self.hpf_wet_dial.setRange(0, 127)
+        self.hpf_wet_dial.setSingleStep(1)
+        self.hpf_wet_dial.setMinimumSize(1,1)
+        self.hpf_wet_dial.valueChanged.connect(self.set_hpf_wet)
+
 
         self.lpf_cutoff_dial = QtWidgets.QDial()
         self.lpf_cutoff_dial.setRange(0, 127)
         self.lpf_cutoff_dial.setSingleStep(1)
         self.lpf_cutoff_dial.setMinimumSize(1,1)
-        self.lpf_cutoff_dial.sliderMoved.connect(self.set_lpf)
+        self.lpf_cutoff_dial.valueChanged.connect(self.set_lpf_cutoff)
+
+        self.lpf_wet_dial = QtWidgets.QDial()
+        self.lpf_wet_dial.setRange(0, 127)
+        self.lpf_wet_dial.setSingleStep(1)
+        self.lpf_wet_dial.setMinimumSize(1,1)
+        self.lpf_wet_dial.valueChanged.connect(self.set_lpf_wet)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Osc {number + 1}"))
         layout.addWidget(self.active_checkbox)
@@ -47,8 +60,14 @@ class OscillatorSection(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel(text=f"HPF Freq:"))
         layout.addWidget(self.hpf_cutoff_dial)
         layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"HPF Wet:"))
+        layout.addWidget(self.hpf_wet_dial)
+        layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"LPF Freq:"))
         layout.addWidget(self.lpf_cutoff_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"LPF Wet:"))
+        layout.addWidget(self.lpf_wet_dial)
 
         self.setLayout(layout)
 
@@ -70,23 +89,44 @@ class OscillatorSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": f"osc_{self.number}",
             "control_implementation": f"OSC_{self.number + 1}_AMP",
             "value": value
         })
     
-    def set_hpf(self, value):
+    def set_hpf_cutoff(self, value):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": f"osc_{self.number}",
             "control_implementation": f"HPF_CUTOFF",
             "value": value
         })
-
-    def set_lpf(self, value):
+    
+    def set_hpf_wet(self, value):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": f"osc_{self.number}",
+            "control_implementation": f"HPF_WET",
+            "value": value
+        })
+
+    def set_lpf_cutoff(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"osc_{self.number}",
             "control_implementation": f"LPF_CUTOFF",
+            "value": value
+        })
+    
+    def set_lpf_wet(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"osc_{self.number}",
+            "control_implementation": f"LPF_WET",
             "value": value
         })
 

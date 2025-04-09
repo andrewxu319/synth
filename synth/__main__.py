@@ -39,13 +39,16 @@ if __name__ == "__main__":
     log.info(f"Using MIDI port {midi_listen_port}")
     midi_listener = MidiListener(thread_mailbox, synth_mailbox, midi_listen_port)
 
+    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, 4, settings.output_device)
+
     ui_listener = UiListener(thread_mailbox, ui_listener_mailbox, synth_mailbox)
     
-    ui = Ui(ui_listener_mailbox)
+    preset_handler = PresetHandler(synthesizer)
 
-    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox, ui, 4, settings.output_device)
+    ui = Ui(ui_listener_mailbox, preset_handler)
 
-    preset_handler = PresetHandler(synthesizer, "presets")
+    synthesizer.ui = ui # fix this later---make synthesizer not require ui. make ui pass osc focus messages
+
 
     try: # our two threads
         midi_listener.start()
@@ -55,8 +58,6 @@ if __name__ == "__main__":
         while True:
             sleep(1)
     except KeyboardInterrupt:
-        preset_handler.save("test")
-        print(preset_handler.load("test"))
         
         log.info("Caught keyboard interrupt. Exiting the program.")
         os._exit(1)

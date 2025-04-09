@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from ...signal.component import Component
+from ..component import Component
 
 class Delay(Component):
     def __init__(self, sample_rate, frames_per_chunk, subcomponents, name="Delay", control_tag="delay") -> None: # initialization parameters = instance of a "delay plugin". cant be changed. the actual delay time etc is changed thru setting "delay.delay_time"

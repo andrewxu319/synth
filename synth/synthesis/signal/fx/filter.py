@@ -14,6 +14,7 @@ class Filter(Component):
         self.type = type
         self.filter_order = 2
         self.cutoff = 20000.0
+        self.wet = 1.0
         self.b, self.a = self.compute_coefficients()
         self.zi = self.compute_initial_conditions()
     
@@ -23,10 +24,11 @@ class Filter(Component):
 
     def __next__(self):
         if self.active:
-            input_signal = next(self.subcomponent_iter)
-            output_signal, self.zi = lfilter(self.b, self.a, input_signal, zi=self.zi)
+            dry_signal = next(self.subcomponent_iter)
+            wet_signal, self.zi = lfilter(self.b, self.a, dry_signal, zi=self.zi)
             # return np.zeros(self.frames_per_chunk, dtype=np.float32)
-            return output_signal.astype(np.float32)
+            mix = dry_signal * (1 - self.wet) + wet_signal * self.wet
+            return mix.astype(np.float32)
         else:
             return next(self.subcomponent_iter)
     
@@ -34,6 +36,7 @@ class Filter(Component):
         copy = Filter(self.sample_rate, self.frames_per_chunk, self.type, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         copy.cutoff = self.cutoff
+        copy.wet = self.wet
         self.log.info(f"deep copied filter {self.name} with active {self.active} and freq {self.cutoff}")
         return copy
 
@@ -65,6 +68,23 @@ class Filter(Component):
                 self.b, self.a = self.compute_coefficients()
         except ValueError:
             logging.error(f"Couldn't set cutoff frequency with value {float_value}")
+    
+    @property
+    def wet(self):
+        return self._wet
+
+    @wet.setter
+    def wet(self, value):
+        try:
+            float_value = float(value)
+            if float_value < 0.0 or float_value > 1.0:
+                raise ValueError("Filter wet must be between 0 and 1!")
+            else:
+                self._wet = float_value
+                logging.info(f"Filter wet set to {self.wet}!")
+                self.b, self.a = self.compute_coefficients()
+        except ValueError:
+            logging.error(f"Couldn't set wet frequency with value {float_value}")
 
     def compute_coefficients(self):
         nyquist = self.sample_rate * 0.5

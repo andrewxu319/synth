@@ -67,6 +67,7 @@ class DelayFx(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": "delay",
             "control_implementation": "DELAY_TIME",
             "value": value
         })
@@ -75,6 +76,7 @@ class DelayFx(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": "delay",
             "control_implementation": "DELAY_FEEDBACK",
             "value": value
         })
@@ -83,6 +85,7 @@ class DelayFx(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
+            "component": "delay",
             "control_implementation": "DELAY_WET",
             "value": value
         })

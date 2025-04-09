@@ -40,7 +40,7 @@ class MidiListener(threading.Thread):
                         ctrl_msg = mb.builder().sender("midi").note_off().with_note(msg.note).on_channel(msg.channel).build() # builder() has its own methods with_note() and on_channel()
                         self.synth_mailbox.put(ctrl_msg)
                     case "control_change":
-                        ctrl_msg = mb.builder().sender("midi").control_change().on_channel(msg.channel).with_cc_number(msg.control).with_value(msg.value).build()
+                        ctrl_msg = mb.builder().sender("midi").control_change().on_channel(msg.channel).with_component("none").with_cc_number(msg.control).with_value(msg.value).build()
                         self.synth_mailbox.put(ctrl_msg)
                     case "stop":
                         self.log.info("Received midi STOP message")

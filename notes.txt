@@ -19,8 +19,10 @@ TO DO LIST
 x delay wet dry
 x instant exit
 x high pass filters
-- sqlite
-- ui
+x sqlite
+x ui
+- adsr
 - anti aliasing
+- filter resonance
 
 https://github.com/Akascape/TkDial

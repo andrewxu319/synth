@@ -124,6 +124,11 @@ class CCParameterBuilder(MessageBuilder):
 
         return CCParameterBuilder(self.message)
 
+    def with_component(self, value):
+        self.message += f" -o {value}"
+            
+        return CCParameterBuilder(self.message)
+
     def with_cc_number(self, value):
         try:
             int_val = int(value)

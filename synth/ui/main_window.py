@@ -21,10 +21,11 @@ class Color(QtWidgets.QWidget):
         self.setPalette(palette)
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, ui_listener_mailbox):
+    def __init__(self, ui_listener_mailbox, preset_handler):
         super().__init__()
-        self.ui_listener_mailbox = ui_listener_mailbox
         self.log = logging.getLogger(__name__)
+        self.ui_listener_mailbox = ui_listener_mailbox
+        self.preset_handler = preset_handler
 
         self.setWindowTitle("Synth")
         self.resize(800, 500)
@@ -42,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(tabs)
         
         # Menu
-        menu = Menu(self)
+        menu = Menu(preset_handler, parent=self)
         self.setMenuBar(menu)
     
     def closeEvent(self, event):
@@ -51,14 +52,15 @@ class MainWindow(QtWidgets.QMainWindow):
         os._exit(1)
 
 class Ui(threading.Thread):
-    def __init__(self, ui_listener_mailbox):
+    def __init__(self, ui_listener_mailbox, preset_handler):
         super().__init__(name="UI Thread")
         self.ui_listener_mailbox = ui_listener_mailbox
+        self.preset_handler = preset_handler
     
     def run(self):
         app = QtWidgets.QApplication([])
 
-        self.window = MainWindow(self.ui_listener_mailbox)
+        self.window = MainWindow(self.ui_listener_mailbox, self.preset_handler)
         self.window.show()
 
         app.exec()
