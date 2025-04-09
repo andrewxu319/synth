@@ -17,8 +17,10 @@ class PresetHandler:
         index = (np.abs(array - value)).argmin()
         return index
     
-    def save(self, file_path, window):
+    def save(self, file_path):
         self.file_path = file_path
+        if file_path.split(".")[-1] != "json":
+            self.log.error(f"Save path must be json! Entered the following: {file_path}")
 
         chain = self.synthesizer.voices[0].signal_chain
         delay = chain.get_components_by_class(Delay)[0]
@@ -46,9 +48,7 @@ class PresetHandler:
 
         with open(file_path, "w") as file:
             file.write(json.dumps(parameters, indent=4))
-        
-        window.setWindowTitle(f"{file_path.split("/")[-1].split(".")[-2]} - Synth")
-    
+            
     def load(self, file_path, window):
         with open(file_path, "r") as file:
             dictionary = json.load(file)
@@ -71,9 +71,12 @@ class PresetHandler:
         delay.delay_wet_dial.setValue(self.find_nearest(self.synthesizer.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
 
         # Cleanup
-        window.setWindowTitle(f"{file_path.split("/")[-1].split(".")[-2]} - Synth")
-
         self.log.info(f"Successfully loaded preset {file_path}!")
+
+    def autosave(self):
+        if self.file_path == "":
+            self.save("presets/autosave.json")
+            self.log.info("Autosaved!")
 
 
 

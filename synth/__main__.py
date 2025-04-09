@@ -58,7 +58,7 @@ if __name__ == "__main__":
         while True:
             sleep(1)
     except KeyboardInterrupt:
-        
+        preset_handler.autosave()      
         log.info("Caught keyboard interrupt. Exiting the program.")
         os._exit(1)
     

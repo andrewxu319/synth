@@ -45,9 +45,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # Menu
         menu = Menu(preset_handler, parent=self)
         self.setMenuBar(menu)
+
+        # Load autosave
+        self.preset_handler.load("presets/autosave.json", self)
     
     def closeEvent(self, event):
         event.accept()
+        self.preset_handler.autosave()
         self.log.info("UI closed. Exiting the program.")
         os._exit(1)
 

@@ -30,6 +30,8 @@ class Menu(QtWidgets.QMenuBar):
         
         self.preset_handler.save(self.preset_handler.file_path, self.parent)
 
+        self.parent.setWindowTitle(f"{self.file_path.split("/")[-1].split(".")[-2]} - Synth")
+
         message_box = QtWidgets.QMessageBox()
         message_box.setText(f'Succesfully saved preset "{self.preset_handler.file_path.split("/")[-1].split(".")[-2]}"!')
         message_box.exec()
@@ -43,6 +45,8 @@ class Menu(QtWidgets.QMenuBar):
 
         if file_path != "":
             self.preset_handler.load(file_path, self.parent)
+            
+            self.parent.setWindowTitle(f"{file_path.split("/")[-1].split(".")[-2]} - Synth")
     
     def save_preset(self):
         file_dialog = QtWidgets.QFileDialog(self)
@@ -53,3 +57,5 @@ class Menu(QtWidgets.QMenuBar):
 
         if file_path != "":
             self.preset_handler.save(file_path, self.parent)
+            
+            self.parent.setWindowTitle(f"{file_path.split("/")[-1].split(".")[-2]} - Synth")
