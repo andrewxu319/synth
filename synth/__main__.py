@@ -39,7 +39,7 @@ if __name__ == "__main__":
     log.info(f"Using MIDI port {midi_listen_port}")
     midi_listener = MidiListener(thread_mailbox, synth_mailbox, midi_listen_port)
 
-    synthesizer = Synthesizer(settings.sample_rate, settings.buffer_size, synth_mailbox, 4, settings.output_device)
+    synthesizer = Synthesizer(settings.sample_rate, settings.buffer_size, synth_mailbox, settings.voices, settings.output_device)
 
     ui_listener = UiListener(thread_mailbox, ui_listener_mailbox, synth_mailbox)
     

@@ -2,6 +2,7 @@
 
 import logging
 from copy import deepcopy
+from threading import Thread
 
 from .component import Component
 from .oscillator import Oscillator
@@ -73,11 +74,11 @@ class Chain:
         for osc in self.get_components_by_class(Oscillator):
             osc.frequency = frequency
         for envelope in self.get_components_by_class(Envelope):
-            envelope.note_on()
+            Thread(target=envelope.note_on).start() # this is kinda dumb but ensures ads can be interrupted by note_off
         self.active = True
 
     def note_off(self):
         # Setting the root component active status should propagate down the tree
         self.active = False # cuz only single voice
         for envelope in self.get_components_by_class(Envelope):
-            envelope.note_off()
+            Thread(target=envelope.note_off).start()
