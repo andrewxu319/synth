@@ -71,11 +71,11 @@ class OscillatorSection(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-        # Initial conditions
-        self.active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
-        self.gain_dial.setValue(127)
-        self.hpf_cutoff_dial.setValue(0)
-        self.lpf_cutoff_dial.setValue(127)
+        # # Initial conditions
+        # self.active_checkbox.setCheckState(QtCore.Qt.CheckState.Checked)
+        # self.gain_dial.setValue(127)
+        # self.hpf_cutoff_dial.setValue(0)
+        # self.lpf_cutoff_dial.setValue(127)
 
     def set_active(self, state):
         self.ui_listener_mailbox.put({
@@ -130,6 +130,102 @@ class OscillatorSection(QtWidgets.QWidget):
             "value": value
         })
 
+class EnvelopeSection(QtWidgets.QWidget):
+    def __init__(self, ui_listener_mailbox):
+        super().__init__()
+        self.ui_listener_mailbox = ui_listener_mailbox
+        self.log = logging.getLogger(__name__)
+
+        layout = QtWidgets.QHBoxLayout()
+
+        self.active_checkbox = QtWidgets.QCheckBox()
+        self.active_checkbox.stateChanged.connect(self.set_active)
+
+        self.attack_dial = QtWidgets.QDial()
+        self.attack_dial.setRange(0, 127)
+        self.attack_dial.setSingleStep(1)
+        self.attack_dial.setMinimumSize(1,1)
+        self.attack_dial.valueChanged.connect(self.set_attack)
+
+        self.decay_dial = QtWidgets.QDial()
+        self.decay_dial.setRange(0, 127)
+        self.decay_dial.setSingleStep(1)
+        self.decay_dial.setMinimumSize(1,1)
+        self.decay_dial.valueChanged.connect(self.set_decay)
+
+        self.sustain_dial = QtWidgets.QDial()
+        self.sustain_dial.setRange(0, 127)
+        self.sustain_dial.setSingleStep(1)
+        self.sustain_dial.setMinimumSize(1,1)
+        self.sustain_dial.valueChanged.connect(self.set_sustain)
+
+        self.release_dial = QtWidgets.QDial()
+        self.release_dial.setRange(0, 127)
+        self.release_dial.setSingleStep(1)
+        self.release_dial.setMinimumSize(1,1)
+        self.release_dial.valueChanged.connect(self.set_release)
+
+        layout.addWidget(QtWidgets.QLabel(text=f"Envelope"))
+        layout.addWidget(self.active_checkbox)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
+        layout.addWidget(self.attack_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Decay:"))
+        layout.addWidget(self.decay_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Sustain:"))
+        layout.addWidget(self.sustain_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Release:"))
+        layout.addWidget(self.release_dial)
+
+        self.setLayout(layout)
+    
+    def set_active(self, state):
+        self.ui_listener_mailbox.put({
+            "type": "set_active",
+            "channel": 0,
+            "component": f"envelope",
+            "value": state == 2 # use midi cc instead?
+        })
+
+    def set_attack(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"envelope",
+            "control_implementation": f"ENV_ATTACK",
+            "value": value
+        })
+
+    def set_decay(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"envelope",
+            "control_implementation": f"ENV_DECAY",
+            "value": value
+        })
+
+    def set_sustain(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"envelope",
+            "control_implementation": f"ENV_SUSTAIN",
+            "value": value
+        })
+
+    def set_release(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": f"envelope",
+            "control_implementation": f"ENV_RELEASE",
+            "value": value
+        })
+
 class OscTab(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
         super().__init__()
@@ -165,8 +261,12 @@ class OscTab(QtWidgets.QWidget):
         layout.addLayout(top_section, 3)
 
         # Bottom section
-        bottom_section = Color("blue")
-        layout.addWidget(bottom_section, 2)
+        bottom_section = QtWidgets.QVBoxLayout()
+
+        self.envelope_section = EnvelopeSection(self.ui_listener_mailbox)
+        bottom_section.addWidget(self.envelope_section, 1)
+
+        layout.addLayout(bottom_section, 2)
 
         # Central widget
         self.setLayout(layout)

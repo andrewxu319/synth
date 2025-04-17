@@ -53,8 +53,8 @@ class Gain(Component):
     @active.setter
     def active(self, value):
         try:
-            bool_val = bool(value)
-            self._active = bool_val
+            self._active = value
+            self.log.info(f"gain with osc {self.subcomponents[0].name} active set to {self.active}")
             # for subcomponent in self.subcomponents: # !!!!!!!!!!
             #     subcomponent.active = bool_val
         except ValueError:

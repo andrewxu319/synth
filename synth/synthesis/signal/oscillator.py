@@ -9,7 +9,6 @@ class Oscillator(Generator):
         super().__init__(sample_rate, buffer_size, name=name)
         self.log = logging.getLogger(__name__)
         self._formula = formula
-        self.name = name
         self.control_tag = control_tag
         self._frequency = 0.0
         self._phase = 0.0
@@ -63,11 +62,14 @@ class Oscillator(Generator):
     @active.setter
     def active(self, value):
         try:
-            self._active = value
+            self._active = bool(value)
             self._frequency = 0.0 if not self._active else self._frequency
-            self.log.info(f"Oscillator {self.name} active set to {self.active}")
+            try:
+                self.log.info(f"Oscillator {self.name} active set to {self.active}")
+            except:
+                self.log.info(f"Oscillator active set to {self.active}")
         except:
-            self.log.error(f"Unable to set with value {value}")
+            self.log.error(f"Unable to set with value {value}, type {type(value)}")
     
     def __iter__(self):
         self._chunk_duration = self.buffer_size / self.sample_rate

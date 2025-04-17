@@ -33,6 +33,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.amp_values = np.linspace(0, 1, 128)
         self.filter_cutoff_values = np.logspace(4, 14.3, 128, endpoint=True, base=2, dtype=np.float32)
         self.filter_wet_values = np.linspace(0, 1, 128)
+        self.envelope_attack_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
+        self.envelope_decay_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
+        self.envelope_sustain_values = np.linspace(0, 1, 128)
+        self.envelope_release_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
         self.delay_time_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.5 # 0 to about 2 seconds
         self.delay_feedback_values = (np.logspace(0, 1, 128, endpoint=True, base=10) - 1) / 9 # 0 to 1
         self.delay_wet_values = np.linspace(0, 1, 128)
@@ -140,6 +144,19 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case Implementation.DELAY_WET.value:
                 self.set_delay_wet(sender, value)
                 self.log.info(f"Delay wet set: {value}")
+            
+            case Implementation.ENV_ATTACK.value:
+                self.set_envelope_attack(sender, value)
+                self.log.info(f"Envelope attack set: {value}")
+            case Implementation.ENV_DECAY.value:
+                self.set_envelope_decay(sender, value)
+                self.log.info(f"Envelope decay set: {value}")
+            case Implementation.ENV_SUSTAIN.value:
+                self.set_envelope_sustain(sender, value)
+                self.log.info(f"Envelope sustain set: {value}")
+            case Implementation.ENV_RELEASE.value:
+                self.set_envelope_release(sender, value)
+                self.log.info(f"Envelope release set: {value}")
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
@@ -240,6 +257,27 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         that was turned on
         """
         return hash(f"{note}{channel}")
+
+    def set_active(self, sender, channel, component, value):
+        self.log.info(f"{component} active set to {value}")
+        match component.split("_"):
+            case ["osc", number]:
+                for voice in self.voices:
+                    components = voice.signal_chain.get_components_by_control_tag(f"osc_{number}")
+                    for component in components:
+                        component.active = value
+            case ["envelope"]:
+                for voice in self.voices:
+                    components = voice.signal_chain.get_components_by_control_tag(f"envelope")
+                    for component in components:
+                        component.active = value
+            case ["delay"]:
+                for voice in self.voices:
+                    components = voice.signal_chain.get_components_by_control_tag(f"delay")
+                    for component in components:
+                        component.active = value
+            case _:
+                raise "Unknown component '{component}'"
     
     def set_gain(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
@@ -305,18 +343,34 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             for component in components:
                 component.wet = self.delay_wet_values[cc_value]
     
-    def set_active(self, sender, channel, component, value):
-        self.log.info(f"{component} active set to {value}")
-        match component.split("_"):
-            case ["osc", number]:
-                for voice in self.voices:
-                    gain_components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
-                    for gain_component in gain_components:
-                        gain_component.subcomponents[0].active = value
-            case ["delay"]:
-                for voice in self.voices:
-                    components = voice.signal_chain.get_components_by_control_tag(f"delay")
-                    for component in components:
-                        component.active = value
-            case _:
-                raise "Unknown component '{component}'"
+    def set_envelope_attack(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.ui.window.osc_tab.envelope_section.attack_dial.setValue(cc_value)
+        for voice in self.voices:
+            components = voice.signal_chain.get_components_by_control_tag(f"envelope")
+            for component in components:
+                component.attack = self.envelope_attack_values[cc_value]
+
+    def set_envelope_decay(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.ui.window.osc_tab.envelope_section.decay_dial.setValue(cc_value)
+        for voice in self.voices:
+            components = voice.signal_chain.get_components_by_control_tag(f"envelope")
+            for component in components:
+                component.decay = self.envelope_decay_values[cc_value]
+    
+    def set_envelope_sustain(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.ui.window.osc_tab.envelope_section.sustain_dial.setValue(cc_value)
+        for voice in self.voices:
+            components = voice.signal_chain.get_components_by_control_tag(f"envelope")
+            for component in components:
+                component.sustain = self.envelope_sustain_values[cc_value]
+
+    def set_envelope_release(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.ui.window.osc_tab.envelope_section.release_dial.setValue(cc_value)
+        for voice in self.voices:
+            components = voice.signal_chain.get_components_by_control_tag(f"envelope")
+            for component in components:
+                component.release = self.envelope_release_values[cc_value]

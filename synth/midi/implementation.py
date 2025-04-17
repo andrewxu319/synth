@@ -10,6 +10,10 @@ class Implementation(Enum):
     HPF_WET = 20
     LPF_CUTOFF = 21
     LPF_WET = 22
-    DELAY_TIME = 23
-    DELAY_FEEDBACK = 24
-    DELAY_WET = 25
+    ENV_ATTACK = 23
+    ENV_DECAY = 24
+    ENV_SUSTAIN = 25
+    ENV_RELEASE = 26
+    DELAY_TIME = 27
+    DELAY_FEEDBACK = 28
+    DELAY_WET = 29

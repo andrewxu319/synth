@@ -56,6 +56,6 @@ class Menu(QtWidgets.QMenuBar):
         file_path = file_dialog.getSaveFileName(self, self.tr("Save File"), "presets", self.tr("*.json"))[0]
 
         if file_path != "":
-            self.preset_handler.save(file_path, self.parent)
+            self.preset_handler.save(file_path)
             
             self.parent.setWindowTitle(f"{file_path.split("/")[-1].split(".")[-2]} - Synth")

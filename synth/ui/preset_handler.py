@@ -3,6 +3,7 @@ import json
 import numpy as np
 
 from ..synthesis.signal.gain import Gain
+from ..synthesis.signal.fx.envelope import Envelope
 from ..synthesis.signal.fx.delay import Delay
 
 class PresetHandler:
@@ -23,20 +24,28 @@ class PresetHandler:
             self.log.error(f"Save path must be json! Entered the following: {file_path}")
 
         chain = self.synthesizer.voices[0].signal_chain
+        envelope = chain.get_components_by_class(Envelope)[0]
         delay = chain.get_components_by_class(Delay)[0]
 
         parameters = {
             "oscillators": {
-                "actives": [chain.get_components_by_control_tag(f"gain_{i}")[0].subcomponents[0].active for i in self.oscillator_count_range],
+                "actives": [chain.get_components_by_control_tag(f"osc_{i}")[0].active for i in self.oscillator_count_range],
                 "gains": [chain.get_components_by_control_tag(f"gain_{i}")[0].amplitude for i in self.oscillator_count_range],
                 "hpf_actives": [chain.get_components_by_control_tag(f"hpf_{i}")[0].active for i in self.oscillator_count_range],
                 "hpf_cutoffs": [chain.get_components_by_control_tag(f"hpf_{i}")[0].cutoff for i in self.oscillator_count_range],
                 "hpf_wets": [chain.get_components_by_control_tag(f"hpf_{i}")[0].wet for i in self.oscillator_count_range],
                 "lpf_actives": [chain.get_components_by_control_tag(f"lpf_{i}")[0].active for i in self.oscillator_count_range],
                 "lpf_cutoffs": [chain.get_components_by_control_tag(f"lpf_{i}")[0].cutoff for i in self.oscillator_count_range],
-                "lpf_wets": [chain.get_components_by_control_tag(f"lpf_{i}")[0].wet for i in self.oscillator_count_range],
+                "lpf_wets": [chain.get_components_by_control_tag(f"lpf_{i}")[0].wet for i in self.oscillator_count_range]
             },
             "fx": {
+                "envelope": {
+                    "active": envelope.active,
+                    "attack": float(envelope.attack),
+                    "decay": float(envelope.decay),
+                    "sustain": float(envelope.sustain),
+                    "release": float(envelope.release)
+                },
                 "delay": {
                     "active": delay.active,
                     "time": delay.delay_time,
@@ -48,7 +57,7 @@ class PresetHandler:
 
         with open(file_path, "w") as file:
             file.write(json.dumps(parameters, indent=4))
-            
+
     def load(self, file_path, window):
         with open(file_path, "r") as file:
             dictionary = json.load(file)
@@ -56,6 +65,7 @@ class PresetHandler:
         # Oscillators
         for i in self.oscillator_count_range:
             osc = window.osc_tab.osc_list[i]
+            osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
             osc.active_checkbox.setChecked(dictionary["oscillators"]["actives"][i])
             osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["gains"][i]))
             osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoffs"][i]))
@@ -64,6 +74,13 @@ class PresetHandler:
             osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wets"][i]))
 
         # FX
+        sustain = window.osc_tab.envelope_section
+        sustain.active_checkbox.setChecked(dictionary["fx"]["envelope"]["active"])
+        sustain.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["fx"]["envelope"]["attack"]))
+        sustain.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["fx"]["envelope"]["decay"]))
+        sustain.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["fx"]["envelope"]["sustain"]))
+        sustain.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["fx"]["envelope"]["release"]))
+
         delay = window.fx_tab.delay_fx
         delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
         delay.delay_time_dial.setValue(self.find_nearest(self.synthesizer.delay_time_values, dictionary["fx"]["delay"]["time"]))

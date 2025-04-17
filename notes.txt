@@ -26,3 +26,5 @@ x ui
 - filter resonance
 
 https://github.com/Akascape/TkDial
+
+decay/sustain broken cuz it doesnt go down

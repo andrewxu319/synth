@@ -1,3 +1,5 @@
+# TO DO: ACTIVE
+
 import logging
 from typing import List
 from copy import deepcopy
@@ -22,20 +24,20 @@ class Envelope(Component):
         self.release = 0.5
         self.wet = 1.0
 
-        self.attack_frames = round(self.attack * self.sample_rate)
-        self.decay_frames = round(self.decay * self.sample_rate)
-        self.release_frames = round(self.release * self.sample_rate)
+        # self.attack_frames = round(self.attack * self.sample_rate)
+        # self.decay_frames = round(self.decay * self.sample_rate)
+        # self.release_frames = round(self.release * self.sample_rate)
 
-        self.ads_multiplier_array_length = 4 * self.sample_rate # fixed value so changing envelope mid note doesnt break things
-        # one_filler = np.full((self.ads_multiplier_array_length), 1.0)
-        self.ads_multiplier_array = np.concatenate((np.linspace(0, 1.0, num=self.attack_frames), np.linspace(1.0, self.sustain, num=self.decay_frames)))
-        self.ads_multiplier_array = np.pad(self.ads_multiplier_array, (0, self.ads_multiplier_array_length - len(self.ads_multiplier_array)), mode="constant", constant_values=self.sustain)
+        # self.ads_multiplier_array_length = 4 * self.sample_rate # fixed value so changing envelope mid note doesnt break things
+        # # one_filler = np.full((self.ads_multiplier_array_length), 1.0)
+        # self.ads_multiplier_array = np.concatenate((np.linspace(0, 1.0, num=self.attack_frames), np.linspace(1.0, self.sustain, num=self.decay_frames)))
+        # self.ads_multiplier_array = np.pad(self.ads_multiplier_array, (0, self.ads_multiplier_array_length - len(self.ads_multiplier_array)), mode="constant", constant_values=self.sustain)
 
-        self.r_multiplier_array_length = 4 * self.sample_rate
-        self.r_multiplier_array = np.linspace(1.0, 0, num=self.release_frames)
-        self.r_multiplier_array = np.pad(self.r_multiplier_array, (0, self.r_multiplier_array_length - len(self.r_multiplier_array)), mode="constant", constant_values=0.0)
+        # self.r_multiplier_array_length = 4 * self.sample_rate
+        # self.r_multiplier_array = np.linspace(1.0, 0, num=self.release_frames)
+        # self.r_multiplier_array = np.pad(self.r_multiplier_array, (0, self.r_multiplier_array_length - len(self.r_multiplier_array)), mode="constant", constant_values=0.0)
 
-        self.release_buffer = np.zeros(self.buffer_size) # stores last chunk of subcomponent signal & loops it for release
+        # self.release_buffer = np.zeros(self.buffer_size) # stores last chunk of subcomponent signal & loops it for release
 
         self.ads_on = False
         self.r_on = False
@@ -89,22 +91,26 @@ class Envelope(Component):
         
         # Attack
         attack_start_time = time.time()
-        while (time.time() <= (attack_start_time + self.attack)) and (self.ads_on):
+        while (float(time.time()) <= (float(attack_start_time) + float(self.attack))) and (self.ads_on): # delete last two floats? test to see if it works
+            # print(float(attack_start_time) + float(self.attack) - float(time.time()))
             for oscillator in self.oscillators:
                 oscillator.amplitude = min(1, (1.0 / self.attack) * (time.time() - attack_start_time))
+                # print(oscillator.amplitude)
                 time.sleep(self.refresh_time)
-        
+
         # Decay
-        decay_start_time = attack_start_time + self.attack
-        while (time.time() <= (decay_start_time + self.decay) and (self.ads_on)):
+        decay_start_time = time.time()
+        while (float(time.time()) <= (float(decay_start_time) + float(self.decay)) and (self.ads_on)):
+            # print(float(time.time()) - (float(decay_start_time + self.decay)))
+
             for oscillator in self.oscillators:
                 oscillator.amplitude = 1.0 - ((1.0 - self.sustain) / self.decay) * (time.time() - decay_start_time)
+                # print(oscillator.amplitude)
                 time.sleep(self.refresh_time)
         # for oscillator in self.oscillators:
         #     print(oscillator.amplitude)
     
     def note_off(self):
-        print("note off")
         self.ads_on = False
         self.r_on = True
 
@@ -142,6 +148,7 @@ class Envelope(Component):
         copy = Envelope(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
         copy.active = self.active
         copy.refresh_time = self.refresh_time
+        # copy.oscillators = self.oscillators
         copy.attack = self.attack
         copy.decay = self.decay
         copy.sustain = self.sustain
