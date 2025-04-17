@@ -49,11 +49,14 @@ class Oscillator(Generator):
     def amplitude(self, value):
         try:
             float_value = float(value)
-            if float_value >= 0.0 and float_value <= 1.0:
-                self._amplitude = float(value)
+            if float_value > 1.0:
+                self._amplitude = 1.0
+            elif float_value < 0.0:
+                self._amplitude = 0.0
             else:
-                raise ValueError
-        except:
+                self._amplitude = float_value
+            # self.log.warning(f"amplitude={self._amplitude}")
+        except ValueError:
             self.log.error(f"Unable to set with value {value}")
 
     @property
@@ -75,11 +78,15 @@ class Oscillator(Generator):
         self._chunk_duration = self.buffer_size / self.sample_rate
         self._chunk_start_time = 0.0
         self._chunk_end_time = self._chunk_duration
+        self.current_amp = 0.0
+
         return self
 
     def __next__(self):
         if self.active:
-            # logging.info(f"{self.name} active!")
+            if self.amplitude != self.current_amp:
+                # logging.warning(f"using amplitude {self.amplitude}")
+                self.current_amp = self.amplitude
             if self.frequency <= 0.0:
                 if self.frequency < 0.0:
                     self.log.error("Overriding negative frequency to 0")
@@ -88,7 +95,6 @@ class Oscillator(Generator):
             else:
                 # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
                 sample = self._formula(self.frequency, self.phase, self.amplitude, np.linspace(self._chunk_start_time, self._chunk_end_time, num=self.buffer_size, endpoint = False))
-                # logging.info(self.amplitude)
 
             self._chunk_start_time = self._chunk_end_time
             self._chunk_end_time += self._chunk_duration

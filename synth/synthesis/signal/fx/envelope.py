@@ -4,6 +4,7 @@ import logging
 from typing import List
 from copy import deepcopy
 import time
+import sys
 
 import numpy as np
 
@@ -87,7 +88,6 @@ class Envelope(Component):
     
     def note_on(self):
         self.ads_on = True
-        print("ad on")
         
         # Attack
         attack_start_time = time.time()
@@ -107,8 +107,11 @@ class Envelope(Component):
                 oscillator.amplitude = 1.0 - ((1.0 - self.sustain) / self.decay) * (time.time() - decay_start_time)
                 # print(oscillator.amplitude)
                 time.sleep(self.refresh_time)
-        # for oscillator in self.oscillators:
-        #     print(oscillator.amplitude)
+
+        for oscillator in self.oscillators:
+            oscillator.amplitude = self.sustain
+
+        sys.exit()
     
     def note_off(self):
         self.ads_on = False
@@ -119,16 +122,20 @@ class Envelope(Component):
             release_amplitudes.append(oscillator.amplitude)
         # print(release_amplitudes)
         release_start_time = time.time()
-        while time.time() <= (release_start_time + self.release):
+        while float(time.time()) <= (float(release_start_time) + float(self.release)):
             for i, oscillator in enumerate(self.oscillators):
                 oscillator.amplitude = max(0, release_amplitudes[i] - (release_amplitudes[i] / self.release) * (time.time() - release_start_time))
-                time.sleep(self.refresh_time)
+            time.sleep(self.refresh_time)
+        # print(float(time.time()) - float(release_start_time))
+        # print(self.release)
         # print("release complete!")
         for oscillator in self.oscillators:
             # print(oscillator.amplitude)
             oscillator.amplitude = 0.0
 
         self.r_on = False
+
+        sys.exit()
 
     
     def get_oscillators(self): # cls = class

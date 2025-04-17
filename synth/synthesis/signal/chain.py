@@ -43,6 +43,7 @@ class Chain:
     @active.setter
     def active(self, value):
         self.get_components_by_class(Mixer)[0].active = value
+
     
     def get_components_by_class(self, cls): # cls = class
         components = []
@@ -73,12 +74,26 @@ class Chain:
     def note_on(self, frequency):
         for osc in self.get_components_by_class(Oscillator):
             osc.frequency = frequency
+        
+        threads = []
         for envelope in self.get_components_by_class(Envelope):
-            Thread(target=envelope.note_on).start() # this is kinda dumb but ensures ads can be interrupted by note_off
+            thread = Thread(target=envelope.note_on)
+            threads.append(thread)
+            thread.start() # this is kinda dumb but ensures ads can be interrupted by note_off
+        # for thread in threads:
+        #     thread.join()
+        # print("note on joined")
         self.active = True
 
     def note_off(self):
         # Setting the root component active status should propagate down the tree
         self.active = False # cuz only single voice
+
+        threads = []
         for envelope in self.get_components_by_class(Envelope):
-            Thread(target=envelope.note_off).start()
+            thread = Thread(target=envelope.note_off)
+            threads.append(thread)
+            thread.start()
+        # for thread in threads:
+        #     thread.join()
+        #     print("note off joined")

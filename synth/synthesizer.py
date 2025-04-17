@@ -210,6 +210,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
         num_active_voices = 0
         while True:
+            # print(f"active voices: {num_active_voices}")
             for voice in self.voices:
                 mixed_next_chunk += next(voice.signal_chain)
                 if voice.active:
