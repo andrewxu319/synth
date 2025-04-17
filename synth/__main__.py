@@ -4,6 +4,7 @@ import queue
 import os
 import sys
 from optparse import OptionParser
+import threading
 
 import numpy as np
 
@@ -49,13 +50,17 @@ if __name__ == "__main__":
 
     synthesizer.ui = ui # fix this later---make synthesizer not require ui. make ui pass osc focus messages
 
+    try:
+        current_threads = 0
 
-    try: # our two threads
         midi_listener.start()
         ui_listener.start()
         ui.start()
         synthesizer.start()
         while True:
+            thread_count = threading.active_count()
+            if current_threads != thread_count:
+                log.warning(f"thread count: {thread_count}")
             sleep(1)
     except KeyboardInterrupt:
         preset_handler.autosave()      

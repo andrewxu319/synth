@@ -78,15 +78,11 @@ class Oscillator(Generator):
         self._chunk_duration = self.buffer_size / self.sample_rate
         self._chunk_start_time = 0.0
         self._chunk_end_time = self._chunk_duration
-        self.current_amp = 0.0
 
         return self
 
     def __next__(self):
         if self.active:
-            if self.amplitude != self.current_amp:
-                # logging.warning(f"using amplitude {self.amplitude}")
-                self.current_amp = self.amplitude
             if self.frequency <= 0.0:
                 if self.frequency < 0.0:
                     self.log.error("Overriding negative frequency to 0")

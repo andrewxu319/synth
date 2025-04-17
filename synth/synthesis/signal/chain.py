@@ -89,11 +89,12 @@ class Chain:
         # Setting the root component active status should propagate down the tree
         self.active = False # cuz only single voice
 
-        threads = []
+        # threads = []
         for envelope in self.get_components_by_class(Envelope):
-            thread = Thread(target=envelope.note_off)
-            threads.append(thread)
-            thread.start()
+            envelope.note_off()
+            # thread = Thread(target=envelope.note_off)
+            # threads.append(thread)
+            # thread.start()
         # for thread in threads:
         #     thread.join()
         #     print("note off joined")
