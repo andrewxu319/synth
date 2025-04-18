@@ -134,7 +134,7 @@ class Envelope(Component):
 
         self.r_on = False
 
-        # sys.exit()
+        sys.exit()
 
     
     def get_oscillators(self): # cls = class

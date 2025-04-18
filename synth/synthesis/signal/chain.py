@@ -94,15 +94,15 @@ class Chain:
     def note_off(self):
         # Setting the root component active status should propagate down the tree
 
-        # thread = Thread(target=self.envelopes_note_off)
-        # thread.start()
+        thread = Thread(target=self.envelopes_note_off)
+        thread.start()
 
-        # self.active = False # cuz only single voice
+        self.active = False # cuz only single voice
 
         # threads = []
-        for envelope in self.get_components_by_class(Envelope):
-            envelope.note_off()
-        self.active = False
+        # for envelope in self.get_components_by_class(Envelope):
+        #     envelope.note_off()
+        # self.active = False
         #     thread = Thread(target=envelope.note_off)
         #     threads.append(thread)
         #     thread.start()
