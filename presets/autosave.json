@@ -1,14 +1,14 @@
 {
     "oscillators": {
         "actives": [
-            false,
-            false,
             true,
             true,
+            false,
+            false,
             false
         ],
         "gains": [
-            1.0,
+            0.5826771653543307,
             1.0,
             1.0,
             1.0,
@@ -59,11 +59,10 @@
     },
     "fx": {
         "envelope": {
-            "active": true,
-            "attack": 0.0009999871253967285,
-            "decay": 0.3066297769546509,
-            "sustain": 0.14173228346456693,
-            "release": 0.013711929321289062
+            "attack": 0.29657989740371704,
+            "decay": 0.22965461015701294,
+            "sustain": 0.047244094488188976,
+            "release": 0.9912874102592468
         },
         "delay": {
             "active": false,

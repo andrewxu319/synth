@@ -15,7 +15,6 @@ class Envelope(Component):
     def __init__(self, sample_rate, buffer_size, subcomponents: List["Component"] = [], name="Envelope", control_tag="envelope"):
         super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
-        self.active = True # delete later
         self.refresh_time = 1 / self.sample_rate
         self.oscillators = self.get_oscillators()
         # change later
@@ -153,7 +152,6 @@ class Envelope(Component):
 
     def __deepcopy__(self, memo):
         copy = Envelope(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
-        copy.active = self.active
         copy.refresh_time = self.refresh_time
         # copy.oscillators = self.oscillators
         copy.attack = self.attack
@@ -164,5 +162,5 @@ class Envelope(Component):
         
         copy.ads_on = self.ads_on
         copy.r_on = self.r_on
-        self.log.info(f"deep copied envelope {self.name} with active {self.active}")
+        self.log.info(f"deep copied envelope {self.name}!")
         return copy

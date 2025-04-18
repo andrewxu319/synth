@@ -1,6 +1,7 @@
 import logging
 import json
 import numpy as np
+from time import sleep
 
 from ..synthesis.signal.gain import Gain
 from ..synthesis.signal.fx.envelope import Envelope
@@ -11,7 +12,7 @@ class PresetHandler:
         self.log = logging.getLogger(__name__)
         self.synthesizer = synthesizer
         self.file_path = ""
-        self.oscillator_count_range = range(len(self.synthesizer.voices[0].signal_chain.get_components_by_class(Gain))) # maybe clean this up later
+        self.oscillator_count_range = range(len(self.synthesizer.voices[0].signal_chain.get_components_by_class(Gain, "gain"))) # maybe clean this up later
 
     def find_nearest(self, array, value):
         array = np.asarray(array)
@@ -40,7 +41,6 @@ class PresetHandler:
             },
             "fx": {
                 "envelope": {
-                    "active": envelope.active,
                     "attack": float(envelope.attack),
                     "decay": float(envelope.decay),
                     "sustain": float(envelope.sustain),
@@ -75,7 +75,6 @@ class PresetHandler:
 
         # FX
         sustain = window.osc_tab.envelope_section
-        sustain.active_checkbox.setChecked(dictionary["fx"]["envelope"]["active"])
         sustain.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["fx"]["envelope"]["attack"]))
         sustain.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["fx"]["envelope"]["decay"]))
         sustain.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["fx"]["envelope"]["sustain"]))

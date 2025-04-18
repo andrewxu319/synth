@@ -21,10 +21,12 @@ x instant exit
 x high pass filters
 x sqlite
 x ui
-- adsr
+x adsr
 - anti aliasing
 - filter resonance
 
 https://github.com/Akascape/TkDial
 
-decay/sustain broken cuz it doesnt go down
+https://www.reddit.com/r/synthesizers/comments/15webnf/i_built_a_4voice_software_synthesizer_with_python/
+
+enable REPEATED NOTES

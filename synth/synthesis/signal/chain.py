@@ -13,7 +13,7 @@ class Chain:
     def __init__(self, root_component: Component): # only takes in root most component. all child components will be accessible under the root component anyway
         self.log = logging.getLogger(__name__)
         self._root_component = root_component
-    
+
     def __iter__(self):
         self.root_iter = iter(self._root_component)
         return self
@@ -45,12 +45,13 @@ class Chain:
         self.get_components_by_class(Mixer)[0].active = value
 
     
-    def get_components_by_class(self, cls): # cls = class
+    def get_components_by_class(self, cls, type=""): # cls = class
         components = []
 
         def search_subcomponents(component):
             if isinstance(component, cls):
-                components.append(component)
+                if type == "" or component.type == type:
+                    components.append(component)
             if hasattr(component, "subcomponents") and len(component.subcomponents) > 0:
                 for subcomponent in component.subcomponents:
                     search_subcomponents(subcomponent)
@@ -72,29 +73,43 @@ class Chain:
         return components
 
     def note_on(self, frequency):
+        self.active = True
+
         for osc in self.get_components_by_class(Oscillator):
             osc.frequency = frequency
         
-        threads = []
-        for envelope in self.get_components_by_class(Envelope):
-            thread = Thread(target=envelope.note_on)
-            threads.append(thread)
-            thread.start() # this is kinda dumb but ensures ads can be interrupted by note_off
+        thread = Thread(target=self.envelopes_note_on)
+        thread.start()
+        # for envelope in self.get_components_by_class(Envelope):
+        #     thread = Thread(target=envelope.note_on)
+        #     threads.append(thread)
+            # thread.start() # this is kinda dumb but ensures ads can be interrupted by note_off
         # for thread in threads:
         #     thread.join()
-        # print("note on joined")
-        self.active = True
+    
+    def envelopes_note_on(self):
+        for envelope in self.get_components_by_class(Envelope):
+            envelope.note_on()
 
     def note_off(self):
         # Setting the root component active status should propagate down the tree
-        self.active = False # cuz only single voice
+
+        # thread = Thread(target=self.envelopes_note_off)
+        # thread.start()
+
+        # self.active = False # cuz only single voice
 
         # threads = []
         for envelope in self.get_components_by_class(Envelope):
             envelope.note_off()
-            # thread = Thread(target=envelope.note_off)
-            # threads.append(thread)
-            # thread.start()
+        self.active = False
+        #     thread = Thread(target=envelope.note_off)
+        #     threads.append(thread)
+        #     thread.start()
         # for thread in threads:
         #     thread.join()
         #     print("note off joined")
+    
+    def envelopes_note_off(self):
+        for envelope in self.get_components_by_class(Envelope):
+            envelope.note_off()

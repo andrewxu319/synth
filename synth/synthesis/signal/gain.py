@@ -10,10 +10,11 @@ class Gain(Component):
     """
     The gain component multiplies the amplitude of the signal by a constant factor.
     """
-    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List["Component"] = [], name: str="Gain", control_tag: str="gain"):
+    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List["Component"] = [], type: str="gain", name: str="Gain", control_tag: str="gain"):
         super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
         self._amplitude = 1.0
+        self.type = type
         self.control_tag = control_tag
     
     def __iter__(self):
@@ -26,17 +27,17 @@ class Gain(Component):
 
     def __deepcopy__(self, memo):
         # print(f"Gain {self.name} being deep copied!")
-        copy = Gain(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        copy = Gain(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(self.subcomponents[0], memo)], type=self.type, name=self.name, control_tag=self.control_tag)
         copy.active = self.active
-        copy.amplitude = self.amplitude 
+        copy.amplitude = self.amplitude
         return copy
 
     @property
-    def amp(self):
-        return self._amp
+    def amplitude(self):
+        return self._amplitude
 
-    @amp.setter
-    def amp(self, value):
+    @amplitude.setter
+    def amplitude(self, value):
         try:
             float_value = float(value)
             if float_value >= 0 and float_value <= 1.9:

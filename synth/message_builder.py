@@ -89,6 +89,18 @@ class NoteParameterBuilder(MessageBuilder):
         return NoteParameterBuilder(self.message)
         # print(builder().note_on().with_note(30).message) => " note_on -n 30"
     
+    def with_velocity(self, value):
+        try:
+            int_val = int(value)
+            if int_val < 0 or int_val > 127:
+                raise ValueError
+            self.message += f" -e {int_val}"
+        except ValueError:
+            self.log.error(f"Unable to set velocity: {value}")
+            raise
+
+        return NoteParameterBuilder(self.message)
+    
     def on_channel(self, channel):
         try:
             int_val = int(channel)

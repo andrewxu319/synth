@@ -51,7 +51,7 @@ if __name__ == "__main__":
     synthesizer.ui = ui # fix this later---make synthesizer not require ui. make ui pass osc focus messages
 
     try:
-        current_threads = 0
+        current_threads = 0 # temp---logging thing
 
         midi_listener.start()
         ui_listener.start()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         while True:
             thread_count = threading.active_count()
             if current_threads != thread_count:
-                log.warning(f"thread count: {thread_count}")
+                log.warning(f"Thread count changed to: {thread_count}")
             sleep(1)
     except KeyboardInterrupt:
         preset_handler.autosave()      

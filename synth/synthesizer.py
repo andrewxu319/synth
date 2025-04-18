@@ -55,23 +55,72 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.message_handler(message)
         return
     
+    def set_up_signal_chain(self) -> Chain:
+        # Defines components
+        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size)
+        self.oscillators = self.oscillator_library.oscillators
+        gains = [Gain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
+        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
+        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
+        mixer = Mixer(self.sample_rate, self.buffer_size, subcomponents=lpfs)
+        velocity_gain = Gain(self.sample_rate, self.buffer_size, subcomponents=[mixer], type="velocity_gain", name="VelocityGain", control_tag=f"velocity_gain")
+        envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[velocity_gain])
+        delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
+
+        # Defines parameters
+        # RLY DONT NEED THIS PART LOWK
+        self.oscillator_active_status = [True, True, True, True, True]
+        self.gain_amplitude_status = [1.0, 1.0, 1.0, 1.0, 1.0] # initial condition. implement settings saving later
+        self.hpf_active_status = [True, True, True, True, True]
+        self.hpf_cutoff_status = [200, 200, 200, 200, 200]
+        self.lpf_active_status = [True, True, True, True, True]
+        self.lpf_cutoff_status = [20000, 20000, 20000, 20000, 20000]
+        self.velocity_gain_amplitude_status = 1.0
+        self.delay_active_status = False
+        self.delay_time_status = 0.5
+        self.delay_feedback_status = 0.5
+        self.delay_wet_status = 0.5
+
+        for i in range(len(self.oscillators)):
+            self.oscillators[i].active = self.oscillator_active_status[i]
+            # print("woah!")
+            # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
+        for i in range(len(gains)):
+            gains[i].amplitude = self.gain_amplitude_status[i] # gain only has one subcomponent
+        for i in range(len(hpfs)):
+            hpfs[i].active = self.hpf_active_status[i]
+            hpfs[i].cutoff = self.hpf_cutoff_status[i]
+            logging.info(f"hpf FREQ active {hpfs[i].active} frequency {hpfs[i].cutoff}")
+        for i in range(len(lpfs)):
+            lpfs[i].active = self.lpf_active_status[i]
+            lpfs[i].cutoff = self.lpf_cutoff_status[i]
+            logging.info(f"lpf FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff}")
+        velocity_gain.amplitude = self.velocity_gain_amplitude_status
+        delay.active = self.delay_active_status
+        delay.delay_time = self.delay_time_status
+        delay.feedback = self.delay_feedback_status
+        delay.wet = self.delay_wet_status
+
+        return Chain(delay) # top most component in the chain is mixer
+
     def message_handler(self, message: str):
         match message.split(): # receiving message as a STRING from midi_listener.py
             case ["exit"]:
                 self.log.info("Got exit command.")
                 self.stream_player.stop()
                 self.should_run = False
-            case [sender, "note_on", "-n", note, "-c", channel]:
+            case [sender, "note_on", "-c", channel, "-n", note, "-e", velocity]:
+                int_note = int(note)
+                int_channel = int(channel)
+                int_velocity = int(velocity)
+                note_name = midi.note_names[int_note]
+                self.note_on(sender, int_channel, int_note, int_velocity)
+                self.log.info(f"Note on {note_name} ({int_note}), vel {velocity}, chan {int_channel}")
+            case [sender, "note_off", "-c", channel, "-n", note]:
                 int_note = int(note)
                 int_channel = int(channel)
                 note_name = midi.note_names[int_note]
-                self.note_on(sender, int_note, int_channel)
-                self.log.info(f"Note on {note_name} ({int_note}), chan {int_channel}")
-            case [sender, "note_off", "-n", note, "-c", channel]:
-                int_note = int(note)
-                int_channel = int(channel)
-                note_name = midi.note_names[int_note]
-                self.note_off(sender, int_note, int_channel)
+                self.note_off(sender, int_channel, int_note)
                 self.log.info(f"Note off {note_name} ({int_note}), chan {int_channel}")
             case [sender, "control_change", "-c", channel, "-o", component, "-n", cc_number, "-v", value]:
                 int_channel = int(channel)
@@ -158,51 +207,6 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.set_envelope_release(sender, value)
                 self.log.info(f"Envelope release set: {value}")
     
-    def set_up_signal_chain(self) -> Chain:
-        # Defines components
-        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size)
-        self.oscillators = self.oscillator_library.oscillators
-        gains = [Gain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
-        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
-        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
-        mixer = Mixer(self.sample_rate, self.buffer_size, subcomponents=lpfs)
-        envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[mixer])
-        delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
-
-        # Defines parameters
-        # RLY DONT NEED THIS PART LOWK
-        self.oscillator_active_status = [True, True, True, True, True]
-        self.gain_amplitude_status = [1.0, 1.0, 1.0, 1.0, 1.0] # initial condition. implement settings saving later
-        self.hpf_active_status = [True, True, True, True, True]
-        self.hpf_cutoff_status = [200, 200, 200, 200, 200]
-        self.lpf_active_status = [True, True, True, True, True]
-        self.lpf_cutoff_status = [20000, 20000, 20000, 20000, 20000]
-        self.delay_active_status = False
-        self.delay_time_status = 0.5
-        self.delay_feedback_status = 0.5
-        self.delay_wet_status = 0.5
-
-        for i in range(len(self.oscillators)):
-            self.oscillators[i].active = self.oscillator_active_status[i]
-            # print("woah!")
-            # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
-        for i in range(len(gains)):
-            gains[i].amplitude = self.gain_amplitude_status[i] # gain only has one subcomponent
-        for i in range(len(hpfs)):
-            hpfs[i].active = self.hpf_active_status[i]
-            hpfs[i].cutoff = self.hpf_cutoff_status[i]
-            logging.info(f"hpf FREQ active {hpfs[i].active} frequency {hpfs[i].cutoff}")
-        for i in range(len(lpfs)):
-            lpfs[i].active = self.lpf_active_status[i]
-            lpfs[i].cutoff = self.lpf_cutoff_status[i]
-            logging.info(f"lpf FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff}")
-        delay.active = self.delay_active_status
-        delay.delay_time = self.delay_time_status
-        delay.feedback = self.delay_feedback_status
-        delay.wet = self.delay_wet_status
-
-        return Chain(delay) # top most component in the chain is mixer
-
     def generator(self):
         """
         Generate the signal by mixing the voice outputs
@@ -222,7 +226,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
             num_active_voices = 0
     
-    def note_on(self, sender: str, note: int, channel: int):
+    def note_on(self, sender: str, channel: int, note: int, velocity: int):
         """
         Set a voice on with the given note.
         If there are no unused voices, drop the voice that has been on for the longest and use that voice
@@ -232,6 +236,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for i in range(len(self.voices)):
             voice = self.voices[i]
             if not voice.active:
+                voice.signal_chain.get_components_by_class(Gain, "velocity_gain")[0].amplitude = self.amp_values[velocity]
                 voice.note_on(freq, note_id)
                 self.voices.append(self.voices.pop(i))
                 break
@@ -239,10 +244,11 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             if i == len(self.voices) - 1:
                 self.log.info("No unused voices! Dropped the voice in use for the longest.")
                 self.voices[0].note_off()
+                voice.signal_chain.get_components_by_class(Gain, "velocity_gain")[0].amplitude = self.amp_values[velocity]
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
     
-    def note_off(self, sender: str, note: int, channel: int):
+    def note_off(self, sender: str, channel: int, note: int):
         """
         Find the voice playing the given note and turn it off.
         """
@@ -265,11 +271,6 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case ["osc", number]:
                 for voice in self.voices:
                     components = voice.signal_chain.get_components_by_control_tag(f"osc_{number}")
-                    for component in components:
-                        component.active = value
-            case ["envelope"]:
-                for voice in self.voices:
-                    components = voice.signal_chain.get_components_by_control_tag(f"envelope")
                     for component in components:
                         component.active = value
             case ["delay"]:

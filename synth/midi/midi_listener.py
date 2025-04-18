@@ -34,10 +34,10 @@ class MidiListener(threading.Thread):
             if msg := in_port.receive(): # "if inport.receive() returns a value, assign it to a variable named msg".
                 match msg.type:
                     case "note_on":
-                        ctrl_msg = mb.builder().sender("midi").note_on().with_note(msg.note).on_channel(msg.channel).build() # builder() has its own methods with_note() and on_channel()
+                        ctrl_msg = mb.builder().sender("midi").note_on().on_channel(msg.channel).with_note(msg.note).with_velocity(msg.velocity).build() # builder() has its own methods with_note() and on_channel()
                         self.synth_mailbox.put(ctrl_msg)
                     case "note_off":
-                        ctrl_msg = mb.builder().sender("midi").note_off().with_note(msg.note).on_channel(msg.channel).build() # builder() has its own methods with_note() and on_channel()
+                        ctrl_msg = mb.builder().sender("midi").note_off().on_channel(msg.channel).with_note(msg.note).build() # builder() has its own methods with_note() and on_channel()
                         self.synth_mailbox.put(ctrl_msg)
                     case "control_change":
                         ctrl_msg = mb.builder().sender("midi").control_change().on_channel(msg.channel).with_component("none").with_cc_number(msg.control).with_value(msg.value).build()

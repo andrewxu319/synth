@@ -138,9 +138,6 @@ class EnvelopeSection(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
 
-        self.active_checkbox = QtWidgets.QCheckBox()
-        self.active_checkbox.stateChanged.connect(self.set_active)
-
         self.attack_dial = QtWidgets.QDial()
         self.attack_dial.setRange(0, 127)
         self.attack_dial.setSingleStep(1)
@@ -166,7 +163,6 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.release_dial.valueChanged.connect(self.set_release)
 
         layout.addWidget(QtWidgets.QLabel(text=f"Envelope"))
-        layout.addWidget(self.active_checkbox)
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
         layout.addWidget(self.attack_dial)
