@@ -19,3 +19,6 @@ class Voice:
     
     def note_off(self):
         self.signal_chain.note_off()
+    
+    def terminate(self):
+        self.signal_chain.terminate()

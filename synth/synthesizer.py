@@ -233,6 +233,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         note_id = self.get_note_id(note, channel)
         freq = midi.frequencies[note]
+
         for i in range(len(self.voices)):
             voice = self.voices[i]
             if not voice.active:
@@ -242,8 +243,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 break
         
             if i == len(self.voices) - 1:
-                self.log.info("No unused voices! Dropped the voice in use for the longest.")
-                self.voices[0].note_off()
+                self.log.warning("No unused voices! Dropped the voice in use for the longest.")
+                self.voices[0].terminate() # force end release
                 voice.signal_chain.get_components_by_class(Gain, "velocity_gain")[0].amplitude = self.amp_values[velocity]
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))

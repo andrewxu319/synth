@@ -97,8 +97,6 @@ class Chain:
         thread = Thread(target=self.envelopes_note_off)
         thread.start()
 
-        self.active = False # cuz only single voice
-
         # threads = []
         # for envelope in self.get_components_by_class(Envelope):
         #     envelope.note_off()
@@ -112,4 +110,12 @@ class Chain:
     
     def envelopes_note_off(self):
         for envelope in self.get_components_by_class(Envelope):
-            envelope.note_off()
+            envelope.note_off(self)
+
+    def terminate(self):
+        thread = Thread(target=self.envelopes_terminate)
+        thread.start()
+    
+    def envelopes_terminate(self):
+        for envelope in self.get_components_by_class(Envelope):
+            envelope.terminate(self)

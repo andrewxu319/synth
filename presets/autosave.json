@@ -1,7 +1,7 @@
 {
     "oscillators": {
         "actives": [
-            false,
+            true,
             true,
             false,
             false,
@@ -62,7 +62,7 @@
             "attack": 0.0073160529136657715,
             "decay": 0.6036270260810852,
             "sustain": 0.10236220472440945,
-            "release": 1.1695358753204346
+            "release": 0.3696520924568176
         },
         "delay": {
             "active": false,

@@ -112,7 +112,7 @@ class Envelope(Component):
 
         sys.exit()
     
-    def note_off(self):
+    def note_off(self, chain):
         self.ads_on = False
         self.r_on = True
 
@@ -133,9 +133,16 @@ class Envelope(Component):
             oscillator.amplitude = 0.0
 
         self.r_on = False
+        chain.active = False
 
         sys.exit()
-
+    
+    def terminate(self, chain):
+        self.ads_on = False
+        for oscillator in self.oscillators:
+            oscillator.amplitude = 0.0
+        chain.active = False
+        sys.exit()
     
     def get_oscillators(self): # cls = class
         components = []

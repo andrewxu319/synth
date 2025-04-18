@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_option("-p", "--port", dest="midi_port", default=None, help="MIDI port to listen on", metavar="MIDI PORT") # python -m synth -p "KOMPLETE KONTROL A49 MIDI 0"
     (options, args) = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO,  # warning
+    logging.basicConfig(level=logging.WARNING,  # warning
                         format='%(asctime)s [%(levelname)s] %(module)s [%(funcName)s]: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
