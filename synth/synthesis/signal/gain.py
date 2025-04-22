@@ -64,13 +64,29 @@ class OscillatorGain(Gain):
     def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List["Component"] = [], name: str="OscillatorGain", control_tag: str="oscillator_gain"):
         super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
     
+    def __deepcopy__(self, memo):
+        copy = OscillatorGain(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        copy.amplitude = self.amplitude
+        return copy
+    
 class VelocityGain(Gain):
     def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List["Component"] = [], name: str="VelocityGain", control_tag: str="velocity_gain"):
         super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
-        self.amp_values = np.linspace(0, 1, 128)
-    
+        self.velocity_sensitivity = 127
+
     def __deepcopy__(self, memo):
-        copy = super().__deepcopy__(memo)
-        copy.amp_values = self.amp_values
+        copy = VelocityGain(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        copy.amplitude = self.amplitude
+        copy.velocity_sensitivity = self.velocity_sensitivity
         return copy
     
+    @property
+    def velocity_sensitivity(self):
+        return self._velocity_sensitivity
+
+    @velocity_sensitivity.setter
+    def velocity_sensitivity(self, value):
+        self._velocity_sensitivity = value
+        self.amp_values = np.linspace(np.linspace(0, 1, 128)[127 - value], 1, 128)

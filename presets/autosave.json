@@ -1,13 +1,61 @@
 {
     "oscillators": {
-        "actives": [],
-        "oscillator_gains": [],
-        "hpf_actives": [],
-        "hpf_cutoffs": [],
-        "hpf_wets": [],
-        "lpf_actives": [],
-        "lpf_cutoffs": [],
-        "lpf_wets": []
+        "actives": [
+            true,
+            true,
+            true,
+            true,
+            true
+        ],
+        "oscillator_gains": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "hpf_actives": [
+            true,
+            true,
+            true,
+            true,
+            true
+        ],
+        "hpf_cutoffs": [
+            200.79872131347656,
+            200.79872131347656,
+            200.79872131347656,
+            200.79872131347656,
+            200.79872131347656
+        ],
+        "hpf_wets": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "lpf_actives": [
+            true,
+            true,
+            true,
+            true,
+            true
+        ],
+        "lpf_cutoffs": [
+            20171.0703125,
+            20171.0703125,
+            20171.0703125,
+            20171.0703125,
+            20171.0703125
+        ],
+        "lpf_wets": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ]
     },
     "fx": {
         "envelope": {
@@ -22,5 +70,8 @@
             "feedback": 0.49971131112263734,
             "wet": 0.49606299212598426
         }
+    },
+    "performance": {
+        "velocity_sensitivity": 127
     }
 }

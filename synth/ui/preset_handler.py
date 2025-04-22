@@ -3,7 +3,8 @@ import json
 import numpy as np
 from time import sleep
 
-from ..synthesis.signal.gain import OscillatorGain
+from ..synthesis.signal.oscillator import Oscillator
+from ..synthesis.signal.gain import OscillatorGain, VelocityGain
 from ..synthesis.signal.fx.envelope import Envelope
 from ..synthesis.signal.fx.delay import Delay
 
@@ -12,7 +13,7 @@ class PresetHandler:
         self.log = logging.getLogger(__name__)
         self.synthesizer = synthesizer
         self.file_path = ""
-        self.oscillator_count_range = range(len(self.synthesizer.voices[0].signal_chain.get_components_by_class(OscillatorGain))) # maybe clean this up later
+        self.oscillator_count_range = range(len(self.synthesizer.voices[0].signal_chain.get_components_by_class(Oscillator))) # maybe clean this up later
 
     def find_nearest(self, array, value):
         array = np.asarray(array)
@@ -52,6 +53,9 @@ class PresetHandler:
                     "feedback": delay.feedback,
                     "wet": delay.wet
                 }
+            },
+            "performance": {
+                "velocity_sensitivity": chain.get_components_by_class(VelocityGain)[0].velocity_sensitivity
             }
         }
 
@@ -62,30 +66,39 @@ class PresetHandler:
         with open(file_path, "r") as file:
             dictionary = json.load(file)
         
-        # Oscillators
-        for i in self.oscillator_count_range:
-            print(i)
-            osc = window.osc_tab.osc_list[i]
-            osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
-            osc.active_checkbox.setChecked(dictionary["oscillators"]["actives"][i])
-            osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["oscillator_gains"][i]))
-            osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoffs"][i]))
-            osc.hpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["hpf_wets"][i]))
-            osc.lpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoffs"][i]))
-            osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wets"][i]))
+        try:
+            # Oscillators
+            for i in self.oscillator_count_range:
+                osc = window.osc_tab.osc_list[i]
+                osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
+                osc.active_checkbox.setChecked(dictionary["oscillators"]["actives"][i])
+                osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["oscillator_gains"][i]))
+                osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoffs"][i]))
+                osc.hpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["hpf_wets"][i]))
+                osc.lpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoffs"][i]))
+                osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wets"][i]))
 
-        # FX
-        sustain = window.osc_tab.envelope_section
-        sustain.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["fx"]["envelope"]["attack"]))
-        sustain.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["fx"]["envelope"]["decay"]))
-        sustain.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["fx"]["envelope"]["sustain"]))
-        sustain.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["fx"]["envelope"]["release"]))
+            # FX
+            sustain = window.osc_tab.envelope_section
+            sustain.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["fx"]["envelope"]["attack"]))
+            sustain.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["fx"]["envelope"]["decay"]))
+            sustain.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["fx"]["envelope"]["sustain"]))
+            sustain.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["fx"]["envelope"]["release"]))
 
-        delay = window.fx_tab.delay_fx
-        delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
-        delay.delay_time_dial.setValue(self.find_nearest(self.synthesizer.delay_time_values, dictionary["fx"]["delay"]["time"]))
-        delay.delay_feedback_dial.setValue(self.find_nearest(self.synthesizer.delay_feedback_values, dictionary["fx"]["delay"]["feedback"]))
-        delay.delay_wet_dial.setValue(self.find_nearest(self.synthesizer.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
+            delay = window.fx_tab.delay_fx
+            delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
+            delay.delay_time_dial.setValue(self.find_nearest(self.synthesizer.delay_time_values, dictionary["fx"]["delay"]["time"]))
+            delay.delay_feedback_dial.setValue(self.find_nearest(self.synthesizer.delay_feedback_values, dictionary["fx"]["delay"]["feedback"]))
+            delay.delay_wet_dial.setValue(self.find_nearest(self.synthesizer.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
+
+            # Performance
+            performance = window.osc_tab.performance_section
+            performance.velocity_sensitivity_dial.setValue(dictionary["performance"]["velocity_sensitivity"])
+        
+        except KeyError as e:
+            self.save(file_path)
+            self.log.info(f"{str(e)} setting not found in {file_path}. Default setting has been added to save file.")
+            self.load(file_path, window)
 
         # Cleanup
         self.log.info(f"Successfully loaded preset {file_path}!")
