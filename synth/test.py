@@ -1,39 +1,75 @@
-# Guitar Chorus Effect
+import logging
+from copy import deepcopy
+from typing import List
 
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.io.wavfile import write
 
-# Parameters
-sample_rate = 100  # Sample rate in Hz
-duration = 5  # Duration in seconds
-frequency = 1  # Frequency of the guitar note (A4)
-depth = 0.02  # Depth of the chorus effect
-rate = 5  # Rate of modulation in Hz
+class Gain:
+    """
+    The gain component multiplies the amplitude of the signal by a constant factor.
+    """
+    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List = [], name: str="Gain", control_tag: str="gain"):
+        self.log = logging.getLogger(__name__)
+        self._amplitude = 1.0
+        self.control_tag = control_tag
+    
+    def __iter__(self):
+        self.subcomponent_iter = iter(self.subcomponents[0]) # i think this means oscillators being amplified is its subcomponent. this line creates an iter out of its subcomponent
+        return self
+    
+    def __next__(self):
+        chunk = next(self.subcomponent_iter)
+        return chunk * self.amplitude 
 
-# Time array
-t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    def __deepcopy__(self, memo):
+        # print(f"Gain {self.name} being deep copied!")
+        copy = Gain(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        copy.amplitude = self.amplitude
+        return copy
 
-# Original guitar signal (sine wave)
-guitar_signal = 0.5 * np.sin(2 * np.pi * frequency * t)
+    @property
+    def amplitude(self):
+        return self._amplitude
 
-# Chorus effect
-modulation = depth * np.sin(2 * np.pi * rate * t)
-chorus_signal = guitar_signal + np.interp(t + modulation, t, guitar_signal)
+    @amplitude.setter
+    def amplitude(self, value):
+        try:
+            float_value = float(value)
+            if float_value >= 0 and float_value <= 1.9:
+                self._amplitude = float_value
+            else:
+                raise ValueError
+        except ValueError:
+            self.log.error(f"Gain must be between 0.0 and 1.0, got {value}")
 
-# Normalize the signal
-chorus_signal /= np.max(np.abs(chorus_signal))
+    @property
+    def active(self):
+        return self._active
 
-# Save to a WAV file
-write('guitar_chorus_effect.wav', sample_rate, (chorus_signal * 32767).astype(np.int16))
+    @active.setter
+    def active(self, value):
+        try:
+            self._active = value
+            self.log.info(f"gain with osc {self.subcomponents[0].name} active set to {self.active}")
+            # for subcomponent in self.subcomponents: # !!!!!!!!!!
+            #     subcomponent.active = bool_val
+        except ValueError:
+            self.log.error(f"Couldn't set active with value {value}")
 
-# Plotting the original and chorus signals
-plt.figure(figsize=(12, 6))
-plt.subplot(2, 1, 1)
-plt.title('Original Guitar Signal')
-plt.plot(t, guitar_signal)
-plt.subplot(2, 1, 2)
-plt.title('Guitar Signal with Chorus Effect')
-plt.plot(t, chorus_signal)
-plt.tight_layout()
-plt.show()
+class OscillatorGain(Gain):
+    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List = [], name: str="OscillatorGain", control_tag: str="Oscillator_gain"):
+        super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
+    
+class VelocityGain(Gain):
+    def __init__(self, sample_rate: int, buffer_size: int, subcomponents: List = [], name: str="VelocityGain", control_tag: str="velocity_gain"):
+        super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
+        self.amp_values = np.linspace(0, 1, 128)
+    
+    def __deepcopy__(self, memo):
+        copy = super().__deepcopy__(memo)
+        copy.amp_values = self.amp_values
+        return copy
+    
+a = OscillatorGain(0,0,[])
+print(a)

@@ -142,15 +142,8 @@ class CCParameterBuilder(MessageBuilder):
         return CCParameterBuilder(self.message)
 
     def with_cc_number(self, value):
-        try:
-            int_val = int(value)
-            if int_val < 0 or int_val > 127:
-                raise ValueError
-            self.message += f" -n {int_val}"
-        except ValueError:
-            self.log.error(f"Unable to set CC control {value}! MIDI values are from 0-127")
-            raise
-
+        self.message += f" -n {value}"
+        # doesnt need to be number
         return CCParameterBuilder(self.message)
 
     def with_value(self, value):

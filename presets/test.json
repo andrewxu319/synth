@@ -7,7 +7,7 @@
             true,
             true
         ],
-        "gains": [
+        "oscillator_gains": [
             1.0,
             1.0,
             1.0,

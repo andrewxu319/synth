@@ -44,14 +44,12 @@ class Chain:
     def active(self, value):
         self.get_components_by_class(Mixer)[0].active = value
 
-    
-    def get_components_by_class(self, cls, type=""): # cls = class
+    def get_components_by_class(self, cls): # cls = class
         components = []
 
         def search_subcomponents(component):
             if isinstance(component, cls):
-                if type == "" or component.type == type:
-                    components.append(component)
+                components.append(component)
             if hasattr(component, "subcomponents") and len(component.subcomponents) > 0:
                 for subcomponent in component.subcomponents:
                     search_subcomponents(subcomponent)

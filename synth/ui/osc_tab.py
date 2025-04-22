@@ -162,7 +162,7 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.release_dial.setMinimumSize(1,1)
         self.release_dial.valueChanged.connect(self.set_release)
 
-        layout.addWidget(QtWidgets.QLabel(text=f"Envelope"))
+        layout.addWidget(QtWidgets.QLabel(text="Envelope"))
         layout.addStretch()
         layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
         layout.addWidget(self.attack_dial)
@@ -182,7 +182,7 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "set_active",
             "channel": 0,
-            "component": f"envelope",
+            "component": "envelope",
             "value": state == 2 # use midi cc instead?
         })
 
@@ -190,8 +190,8 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
-            "component": f"envelope",
-            "control_implementation": f"ENV_ATTACK",
+            "component": "envelope",
+            "control_implementation": "ENV_ATTACK",
             "value": value
         })
 
@@ -199,8 +199,8 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
-            "component": f"envelope",
-            "control_implementation": f"ENV_DECAY",
+            "component": "envelope",
+            "control_implementation": "ENV_DECAY",
             "value": value
         })
 
@@ -208,8 +208,8 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
-            "component": f"envelope",
-            "control_implementation": f"ENV_SUSTAIN",
+            "component": "envelope",
+            "control_implementation": "ENV_SUSTAIN",
             "value": value
         })
 
@@ -217,8 +217,36 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox.put({
             "type": "control_change",
             "channel": 0, # doesnt rly matter
-            "component": f"envelope",
-            "control_implementation": f"ENV_RELEASE",
+            "component": "envelope",
+            "control_implementation": "ENV_RELEASE",
+            "value": value
+        })
+    
+class PerformanceSection(QtWidgets.QWidget):
+    def __init__(self, ui_listener_mailbox):
+        super().__init__()
+        self.ui_listener_mailbox = ui_listener_mailbox
+        self.log = logging.getLogger(__name__)
+
+        layout = QtWidgets.QVBoxLayout()
+
+        self.velocity_sensitivity_dial = QtWidgets.QDial()
+        self.velocity_sensitivity_dial.setRange(0, 127)
+        self.velocity_sensitivity_dial.setSingleStep(1)
+        self.velocity_sensitivity_dial.setMinimumSize(1,1)
+        self.velocity_sensitivity_dial.valueChanged.connect(self.set_velocity_sensitivity)
+
+        layout.addWidget(QtWidgets.QLabel(text=f"Velocity Sensitivity:"))
+        layout.addWidget(self.velocity_sensitivity_dial)
+
+        self.setLayout(layout)
+
+    def set_velocity_sensitivity(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": "global",
+            "control_implementation": f"VEL_SENSITIVITY",
             "value": value
         })
 
@@ -257,10 +285,13 @@ class OscTab(QtWidgets.QWidget):
         layout.addLayout(top_section, 3)
 
         # Bottom section
-        bottom_section = QtWidgets.QVBoxLayout()
+        bottom_section = QtWidgets.QHBoxLayout()
 
         self.envelope_section = EnvelopeSection(self.ui_listener_mailbox)
-        bottom_section.addWidget(self.envelope_section, 1)
+        bottom_section.addWidget(self.envelope_section, 5)
+
+        self.performance_section = PerformanceSection(self.ui_listener_mailbox)
+        bottom_section.addWidget(self.performance_section, 1)
 
         layout.addLayout(bottom_section, 2)
 

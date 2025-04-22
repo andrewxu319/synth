@@ -12,7 +12,7 @@ from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
-from .synthesis.signal.gain import Gain
+from .synthesis.signal.gain import OscillatorGain, VelocityGain, Gain
 from .synthesis.signal.fx.filter import Filter
 from .synthesis.signal.mixer import Mixer
 from .synthesis.signal.fx.envelope import Envelope
@@ -59,11 +59,11 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         # Defines components
         self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size)
         self.oscillators = self.oscillator_library.oscillators
-        gains = [Gain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"gain_{i}") for i in range(len(self.oscillators))]
-        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[gains[i]], control_tag=f"hpf_{i}") for i in range(len(gains))]
-        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(gains))]
+        oscillator_gains = [OscillatorGain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"oscillator_gain_{i}") for i in range(len(self.oscillators))]
+        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[oscillator_gains[i]], control_tag=f"hpf_{i}") for i in range(len(oscillator_gains))]
+        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(oscillator_gains))]
         mixer = Mixer(self.sample_rate, self.buffer_size, subcomponents=lpfs)
-        velocity_gain = Gain(self.sample_rate, self.buffer_size, subcomponents=[mixer], type="velocity_gain", name="VelocityGain", control_tag=f"velocity_gain")
+        velocity_gain = VelocityGain(self.sample_rate, self.buffer_size, subcomponents=[mixer])
         envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[velocity_gain])
         delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
 
@@ -85,8 +85,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             self.oscillators[i].active = self.oscillator_active_status[i]
             # print("woah!")
             # logging.info(f"{self.oscillators[i].name} active is {self.oscillators[i].active}! Executed from synthesizers.py, 106") # ACTIVE CHECK
-        for i in range(len(gains)):
-            gains[i].amplitude = self.gain_amplitude_status[i] # gain only has one subcomponent
+        for i in range(len(oscillator_gains)):
+            oscillator_gains[i].amplitude = self.gain_amplitude_status[i] # gain only has one subcomponent
         for i in range(len(hpfs)):
             hpfs[i].active = self.hpf_active_status[i]
             hpfs[i].cutoff = self.hpf_cutoff_status[i]
@@ -124,7 +124,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.log.info(f"Note off {note_name} ({int_note}), chan {int_channel}")
             case [sender, "control_change", "-c", channel, "-o", component, "-n", cc_number, "-v", value]:
                 int_channel = int(channel)
-                int_cc_number = int(cc_number)
+                try:
+                    int_cc_number = int(cc_number)
+                except ValueError:
+                    int_cc_number = cc_number
                 int_value = int(value)
                 self.control_change_handler(sender, int_channel, component, int_cc_number, int_value)
             case [sender, "set_active", "-c", channel, "-o", component, "-v", value]:
@@ -206,6 +209,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case Implementation.ENV_RELEASE.value:
                 self.set_envelope_release(sender, value)
                 self.log.info(f"Envelope release set: {value}")
+            
+            case Implementation.VEL_SENSITIVITY.value:
+                self.set_velocity_sensitivity(sender, value)
+                self.log.info(f"Velocity sensitivity set: {value}")
     
     def generator(self):
         """
@@ -237,7 +244,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for i in range(len(self.voices)):
             voice = self.voices[i]
             if not voice.active:
-                voice.signal_chain.get_components_by_class(Gain, "velocity_gain")[0].amplitude = self.amp_values[velocity]
+                component = voice.signal_chain.get_components_by_control_tag(f"velocity_gain")[0]
+                component.amplitude = component.amp_values[velocity]
                 voice.note_on(freq, note_id)
                 self.voices.append(self.voices.pop(i))
                 break
@@ -245,7 +253,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             if i == len(self.voices) - 1:
                 self.log.warning("No unused voices! Dropped the voice in use for the longest.")
                 self.voices[0].terminate() # force end release
-                voice.signal_chain.get_components_by_class(Gain, "velocity_gain")[0].amplitude = self.amp_values[velocity]
+                component = voice.signal_chain.get_components_by_control_tag(f"velocity_gain")[0]
+                component.amplitude = component.amp_values[velocity]
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
     
@@ -282,11 +291,19 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             case _:
                 raise "Unknown component '{component}'"
     
+    def set_velocity_sensitivity(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.ui.window.osc_tab.performance_section.velocity_sensitivity_dial.setValue(cc_value)
+        for voice in self.voices:
+            components = [voice.signal_chain.get_components_by_control_tag(f"oscillator_gain_{i}")[0] for i in range(len(self.oscillators))]
+            for component in components:
+                component.amp_values = np.linspace(self.amp_values[127 - cc_value], 1, 128)
+
     def set_gain(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
             self.ui.window.osc_tab.osc_list[number].gain_dial.setValue(cc_value)
         for voice in self.voices:
-            components = voice.signal_chain.get_components_by_control_tag(f"gain_{number}")
+            components = voice.signal_chain.get_components_by_control_tag(f"oscillator_gain_{number}")
             for component in components:
                 component.amplitude = self.amp_values[cc_value]
     

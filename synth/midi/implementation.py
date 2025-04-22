@@ -17,3 +17,4 @@ class Implementation(Enum):
     DELAY_TIME = 27
     DELAY_FEEDBACK = 28
     DELAY_WET = 29
+    VEL_SENSITIVITY = "VEL_SENSITIVITY"
