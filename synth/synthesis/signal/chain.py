@@ -6,7 +6,7 @@ from threading import Thread
 
 from .component import Component
 from .oscillator import Oscillator
-from .fx.envelope import Envelope
+from .modulators.envelope import Envelope
 from .mixer import Mixer
 
 class Chain:

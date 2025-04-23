@@ -4,7 +4,7 @@ import logging
 import threading
 import queue
 
-from .. import message_builder as mb
+from ..midi import message_builder as mb
 from ..midi.implementation import Implementation
 
 class UiListener(threading.Thread):

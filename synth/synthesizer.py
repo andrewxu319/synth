@@ -16,9 +16,9 @@ from .synthesis.signal.oscillator import Oscillator
 from .synthesis.signal.fx.gain import OscillatorGain, VelocityGain
 from .synthesis.signal.fx.filter import Filter
 from .synthesis.signal.mixer import Mixer
-from .synthesis.signal.fx.envelope import Envelope
+from .synthesis.signal.modulators.envelope import Envelope
 from .synthesis.signal.fx.delay import Delay
-from .synthesis.signal.fx.lfo import Lfo
+from .synthesis.signal.modulators.lfo import Lfo
 from .playback.stream_player import StreamPlayer
 
 class Synthesizer(threading.Thread): # each synth in separate thread??
@@ -47,6 +47,13 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
+        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[0]["formula"], self.mailbox)
+        lfo.cc_number = Implementation.OSC_1_AMP.value
+        lfo.frequency = 1.0
+        lfo.value_range = (0.0, 1.0)
+        lfo.voices = self.voices
+        lfo.start()
+
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)
     
@@ -68,12 +75,6 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         velocity_gain = VelocityGain(self.sample_rate, self.buffer_size, subcomponents=[mixer])
         envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[velocity_gain])
         delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
-
-        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[0]["formula"], self.mailbox)
-        lfo.cc_number = Implementation.OSC_1_AMP.value
-        lfo.frequency = 1.0
-        lfo.value_range = (0, 127)
-        lfo.start()
 
         # Defines parameters
         # RLY DONT NEED THIS PART LOWK

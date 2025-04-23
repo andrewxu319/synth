@@ -4,7 +4,7 @@ import queue
 
 import mido
 
-from .. import message_builder as mb
+from . import message_builder as mb
 
 class MidiListener(threading.Thread):
     """

@@ -5,7 +5,7 @@ from time import sleep
 
 from ..synthesis.signal.oscillator import Oscillator
 from ..synthesis.signal.fx.gain import OscillatorGain, VelocityGain
-from ..synthesis.signal.fx.envelope import Envelope
+from ..synthesis.signal.modulators.envelope import Envelope
 from ..synthesis.signal.fx.delay import Delay
 
 class PresetHandler:
@@ -31,27 +31,29 @@ class PresetHandler:
 
         parameters = {
             "oscillators": {
-                "actives": [chain.get_components_by_control_tag(f"osc_{i}")[0].active for i in self.oscillator_count_range],
-                "oscillator_gains": [chain.get_components_by_control_tag(f"oscillator_gain_{i}")[0].amplitude for i in self.oscillator_count_range],
-                "hpf_actives": [chain.get_components_by_control_tag(f"hpf_{i}")[0].active for i in self.oscillator_count_range],
-                "hpf_cutoffs": [chain.get_components_by_control_tag(f"hpf_{i}")[0].cutoff for i in self.oscillator_count_range],
-                "hpf_wets": [chain.get_components_by_control_tag(f"hpf_{i}")[0].wet for i in self.oscillator_count_range],
-                "lpf_actives": [chain.get_components_by_control_tag(f"lpf_{i}")[0].active for i in self.oscillator_count_range],
-                "lpf_cutoffs": [chain.get_components_by_control_tag(f"lpf_{i}")[0].cutoff for i in self.oscillator_count_range],
-                "lpf_wets": [chain.get_components_by_control_tag(f"lpf_{i}")[0].wet for i in self.oscillator_count_range]
+                "active": [chain.get_components_by_control_tag(f"osc_{i}")[0].active for i in self.oscillator_count_range],
+                "oscillator_gain": [chain.get_components_by_control_tag(f"oscillator_gain_{i}")[0].amplitude for i in self.oscillator_count_range],
+                "hpf_active": [chain.get_components_by_control_tag(f"hpf_{i}")[0].active for i in self.oscillator_count_range],
+                "hpf_cutoff": [chain.get_components_by_control_tag(f"hpf_{i}")[0].cutoff for i in self.oscillator_count_range],
+                "hpf_wet": [chain.get_components_by_control_tag(f"hpf_{i}")[0].wet for i in self.oscillator_count_range],
+                "lpf_active": [chain.get_components_by_control_tag(f"lpf_{i}")[0].active for i in self.oscillator_count_range],
+                "lpf_cutoff": [chain.get_components_by_control_tag(f"lpf_{i}")[0].cutoff for i in self.oscillator_count_range],
+                "lpf_wet": [chain.get_components_by_control_tag(f"lpf_{i}")[0].wet for i in self.oscillator_count_range]
             },
             "fx": {
-                "envelope": {
-                    "attack": float(envelope.attack),
-                    "decay": float(envelope.decay),
-                    "sustain": float(envelope.sustain),
-                    "release": float(envelope.release)
-                },
                 "delay": {
                     "active": delay.active,
                     "time": delay.delay_time,
                     "feedback": delay.feedback,
                     "wet": delay.wet
+                }
+            },
+            "modulators": {
+                "envelope": {
+                    "attack": float(envelope.attack),
+                    "decay": float(envelope.decay),
+                    "sustain": float(envelope.sustain),
+                    "release": float(envelope.release)
                 }
             },
             "performance": {
@@ -71,25 +73,26 @@ class PresetHandler:
             for i in self.oscillator_count_range:
                 osc = window.osc_tab.osc_list[i]
                 osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
-                osc.active_checkbox.setChecked(dictionary["oscillators"]["actives"][i])
-                osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["oscillator_gains"][i]))
-                osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoffs"][i]))
-                osc.hpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["hpf_wets"][i]))
-                osc.lpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoffs"][i]))
-                osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wets"][i]))
+                osc.active_checkbox.setChecked(dictionary["oscillators"]["active"][i])
+                osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["oscillator_gain"][i]))
+                osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoff"][i]))
+                osc.hpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["hpf_wet"][i]))
+                osc.lpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoff"][i]))
+                osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wet"][i]))
 
             # FX
-            sustain = window.osc_tab.envelope_section
-            sustain.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["fx"]["envelope"]["attack"]))
-            sustain.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["fx"]["envelope"]["decay"]))
-            sustain.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["fx"]["envelope"]["sustain"]))
-            sustain.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["fx"]["envelope"]["release"]))
-
             delay = window.fx_tab.delay_fx
             delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
             delay.delay_time_dial.setValue(self.find_nearest(self.synthesizer.delay_time_values, dictionary["fx"]["delay"]["time"]))
             delay.delay_feedback_dial.setValue(self.find_nearest(self.synthesizer.delay_feedback_values, dictionary["fx"]["delay"]["feedback"]))
             delay.delay_wet_dial.setValue(self.find_nearest(self.synthesizer.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
+
+            # Modulators
+            envelope = window.osc_tab.envelope_section
+            envelope.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["modulators"]["envelope"]["attack"]))
+            envelope.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["modulators"]["envelope"]["decay"]))
+            envelope.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["modulators"]["envelope"]["sustain"]))
+            envelope.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["modulators"]["envelope"]["release"]))
 
             # Performance
             performance = window.osc_tab.performance_section
