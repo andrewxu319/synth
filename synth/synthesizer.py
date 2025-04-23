@@ -227,7 +227,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         """
         Generate the signal by mixing the voice outputs
         """
-        mixed_next_chunk = np.zeros(self.buffer_size + 100, np.float32)
+        mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
         num_active_voices = 0
         while True:
             # print(f"active voices: {num_active_voices}")
@@ -239,7 +239,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             mixed_next_chunk = np.clip(mixed_next_chunk, -1.0, 1.0)
 
             yield mixed_next_chunk
-            mixed_next_chunk = np.zeros(self.buffer_size + 100, np.float32)
+            mixed_next_chunk = np.zeros(self.buffer_size, np.float32)
             num_active_voices = 0
     
     def note_on(self, sender: str, channel: int, note: int, velocity: int):

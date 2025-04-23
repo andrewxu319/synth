@@ -73,7 +73,7 @@ class Oscillator(Generator):
             self.log.error(f"Unable to set with value {value}, type {type(value)}")
     
     def __iter__(self):
-        self.chunk_duration = (self.buffer_size + 100) / self.sample_rate
+        self.chunk_duration = (self.buffer_size) / self.sample_rate
         self.chunk_start_time = 0.0
         self.chunk_end_time = self.chunk_duration
 
@@ -84,11 +84,11 @@ class Oscillator(Generator):
             if self.frequency <= 0.0:
                 if self.frequency < 0.0:
                     self.log.error("Overriding negative frequency to 0")
-                sample = np.zeros(self.buffer_size + 100)
+                sample = np.zeros(self.buffer_size)
 
             else:
                 # sample = self.amplitude * np.sin(self.phase + (2 * np.pi * self.frequency) * np.linspace(self.chunk_start_time, self.chunk_end_time, num=self.buffer_size, endpoint = False))
-                sample = self.formula(self.frequency, self.phase, self.amplitude, np.linspace(self.chunk_start_time, self.chunk_end_time, num=self.buffer_size + 100 , endpoint = False))
+                sample = self.formula(self.frequency, self.phase, self.amplitude, np.linspace(self.chunk_start_time, self.chunk_end_time, num=self.buffer_size , endpoint = False))
 
             self.chunk_start_time = self.chunk_end_time
             self.chunk_end_time += self.buffer_size / self.sample_rate

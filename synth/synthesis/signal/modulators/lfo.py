@@ -38,7 +38,7 @@ class Lfo(Oscillator):
                     components = voice.signal_chain.get_components_by_class(OscillatorGain)
                     for component in components:
                         component.amplitude = output
-                time.sleep(10000 * self.refresh_time)
+                time.sleep(200 * self.refresh_time)
 
             except KeyboardInterrupt:
                 break
