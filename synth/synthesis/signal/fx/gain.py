@@ -4,7 +4,7 @@ from typing import List
 
 import numpy as np
 
-from .component import Component
+from ..component import Component
 
 class Gain(Component):
     """

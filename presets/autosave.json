@@ -2,17 +2,17 @@
     "oscillators": {
         "actives": [
             true,
-            true,
-            true,
-            true,
-            true
+            false,
+            false,
+            false,
+            false
         ],
         "oscillator_gains": [
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0
+            0.7795275590551181,
+            0.7795275590551181,
+            0.7795275590551181,
+            0.7795275590551181,
+            0.7795275590551181
         ],
         "hpf_actives": [
             true,

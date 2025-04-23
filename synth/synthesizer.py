@@ -12,11 +12,13 @@ from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
-from .synthesis.signal.gain import OscillatorGain, VelocityGain
+from .synthesis.signal.oscillator import Oscillator
+from .synthesis.signal.fx.gain import OscillatorGain, VelocityGain
 from .synthesis.signal.fx.filter import Filter
 from .synthesis.signal.mixer import Mixer
 from .synthesis.signal.fx.envelope import Envelope
 from .synthesis.signal.fx.delay import Delay
+from .synthesis.signal.fx.lfo import Lfo
 from .playback.stream_player import StreamPlayer
 
 class Synthesizer(threading.Thread): # each synth in separate thread??
@@ -57,8 +59,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_up_signal_chain(self) -> Chain:
         # Defines components
-        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size)
-        self.oscillators = self.oscillator_library.oscillators
+        self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size).oscillators
+        self.oscillators = [Oscillator(self.sample_rate, self.buffer_size, oscillator["formula"], oscillator["name"], oscillator["control_tag"]) for oscillator in self.oscillator_library]
         oscillator_gains = [OscillatorGain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"oscillator_gain_{i}") for i in range(len(self.oscillators))]
         hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[oscillator_gains[i]], control_tag=f"hpf_{i}") for i in range(len(oscillator_gains))]
         lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(oscillator_gains))]
@@ -66,6 +68,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         velocity_gain = VelocityGain(self.sample_rate, self.buffer_size, subcomponents=[mixer])
         envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[velocity_gain])
         delay = Delay(self.sample_rate, self.buffer_size, subcomponents=[envelope])
+
+        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[0]["formula"], self.mailbox)
+        lfo.cc_number = Implementation.OSC_1_AMP.value
+        lfo.frequency = 1.0
+        lfo.value_range = (0, 127)
+        lfo.start()
 
         # Defines parameters
         # RLY DONT NEED THIS PART LOWK

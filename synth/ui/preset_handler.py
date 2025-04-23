@@ -4,7 +4,7 @@ import numpy as np
 from time import sleep
 
 from ..synthesis.signal.oscillator import Oscillator
-from ..synthesis.signal.gain import OscillatorGain, VelocityGain
+from ..synthesis.signal.fx.gain import OscillatorGain, VelocityGain
 from ..synthesis.signal.fx.envelope import Envelope
 from ..synthesis.signal.fx.delay import Delay
 
