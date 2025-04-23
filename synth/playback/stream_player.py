@@ -1,5 +1,6 @@
 import pyaudio
 import logging
+import numpy as np
 
 class StreamPlayer:
     def __init__(self, sample_rate: int, buffer_size: int, input_delegate, output_device):
@@ -10,6 +11,10 @@ class StreamPlayer:
         self.output_device = output_device
         self.pyaudio_interface = pyaudio.PyAudio()
         self._output_stream = None
+        self.current_frame = np.zeros(self.buffer_size, np.float32)
+
+        self.smoothing_frames = 100
+        self.smoothing_weights = np.linspace(0.0, 1.0, num=self.smoothing_frames, dtype=np.float32)
     
     @property
     def sample_rate(self):
@@ -98,8 +103,10 @@ class StreamPlayer:
         """
         The audio callback is called by the pyaudio interface when it needs more data.
         """
-        frames = next(self.input_delegate)
-        return (frames, pyaudio.paContinue)
+        next_frame = next(self.input_delegate)
+        next_frame[:self.smoothing_frames] = (next_frame[:self.smoothing_frames] * self.smoothing_weights) + (self.current_frame[self.buffer_size:] * (1 - self.smoothing_weights))
+        self.current_frame = next_frame
+        return (next_frame, pyaudio.paContinue)
     
     def is_active(self):
         """
