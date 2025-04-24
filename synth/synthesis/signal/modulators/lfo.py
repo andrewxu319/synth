@@ -7,6 +7,8 @@ import time
 import sys
 
 from ..oscillator import Oscillator
+from ..fx.gain import OscillatorGain
+from ..fx.filter import Filter
 from ....midi import message_builder as mb
 
 class Lfo(Oscillator):
@@ -30,7 +32,7 @@ class Lfo(Oscillator):
         from ..fx.gain import OscillatorGain
         while True:
             try:
-                output = self.value_range[0] + (self.value_range[1] - self.value_range[0]) * (self.formula(self.frequency, self.phase, 0.5, time.time() - self.start_time) + 0.5) # frequency in seconds
+                output = self.value_range[0] + (self.value_range[1] - self.value_range[0]) * (self.formula(self.frequency, self.phase, 0.5, time.time() - self.start_time) + 1.0) # frequency in seconds
                 # ctrl_msg = mb.builder().sender("midi").control_change().on_channel(self.channel).with_component("global").with_cc_number(self.cc_number).with_value(round(output)).build()
                 # self.mailbox.put(ctrl_msg)
                 # print(ctrl_msg)
@@ -38,7 +40,7 @@ class Lfo(Oscillator):
                     components = voice.signal_chain.get_components_by_class(OscillatorGain)
                     for component in components:
                         component.amplitude = output
-                time.sleep(200 * self.refresh_time)
+                time.sleep(self.refresh_time)
 
             except KeyboardInterrupt:
                 break

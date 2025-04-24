@@ -47,12 +47,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
-        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[0]["formula"], self.mailbox)
+        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[3]["formula"], self.mailbox)
         lfo.cc_number = Implementation.OSC_1_AMP.value
         lfo.frequency = 1.0
-        lfo.value_range = (0.0, 1.0)
+        lfo.value_range = (0.1, 1.0)
         lfo.voices = self.voices
-        lfo.start()
+        # lfo.start()
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)

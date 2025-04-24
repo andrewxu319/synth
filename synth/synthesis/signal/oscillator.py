@@ -36,7 +36,7 @@ class Oscillator(Generator):
 
     def set_phase_degrees(self, degrees):
         try:
-            self._phase = degrees / 180 * np.pi
+            self._phase = degrees * 0.017453292519943295 # degrees / 180 * np.pi
         except:
             self.log.error(f"Unable to set with value {degrees}")
 
@@ -72,8 +72,8 @@ class Oscillator(Generator):
         except:
             self.log.error(f"Unable to set with value {value}, type {type(value)}")
     
-    def __iter__(self):
-        self.chunk_duration = (self.buffer_size) / self.sample_rate
+    def __iter__(self): # make sure this isnt constantly called
+        self.chunk_duration = self.buffer_size / self.sample_rate
         self.chunk_start_time = 0.0
         self.chunk_end_time = self.chunk_duration
 
@@ -91,7 +91,7 @@ class Oscillator(Generator):
                 sample = self.formula(self.frequency, self.phase, self.amplitude, np.linspace(self.chunk_start_time, self.chunk_end_time, num=self.buffer_size , endpoint = False))
 
             self.chunk_start_time = self.chunk_end_time
-            self.chunk_end_time += self.buffer_size / self.sample_rate
+            self.chunk_end_time += self.chunk_duration
 
             return sample.astype(np.float32)
 

@@ -24,13 +24,13 @@ class OscillatorLibrary():
                 "name": "SawtoothWaveOscillator",
                 "control_tag": "osc_2",
                 "formula": (lambda frequency, phase, amplitude, t:
-                            amplitude * (t / (1 / frequency) - np.floor(t / (1 / frequency) + 0.5)))
+                            2 * amplitude * (t * frequency - np.floor(t * frequency + 0.5)))
             },
             {
                 "name": "TriangleWaveOscillator",
                 "control_tag": "osc_3",
                 "formula": (lambda frequency, phase, amplitude, t:
-                            (abs(amplitude * (t / (1 / frequency) - np.floor(t / (1 / frequency) + 0.5))) - 0.5) * 2)
+                            (abs(amplitude * (t * frequency - np.floor(t * frequency + 0.5))) - 0.5) * 4 + 1)
             },
             {
                 "name": "NoiseOscillator",

@@ -15,106 +15,94 @@ class Envelope(Component):
     def __init__(self, sample_rate, buffer_size, subcomponents: List["Component"] = [], name="Envelope", control_tag="envelope"):
         super().__init__(sample_rate, buffer_size, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
-        self.refresh_time = 1 / self.sample_rate
+        self.refresh_time = 1 / self.sample_rate * self.buffer_size
         self.oscillators = self.get_oscillators()
         # change later
         self.attack = 0.3
-        self.decay = 0.6
-        self.sustain = 0.1
+        self._decay = 0.6
+        self._sustain = 0.1
         self.release = 0.5
         self.wet = 1.0
 
-        # self.attack_frames = round(self.attack * self.sample_rate)
-        # self.decay_frames = round(self.decay * self.sample_rate)
-        # self.release_frames = round(self.release * self.sample_rate)
-
-        # self.ads_multiplier_array_length = 4 * self.sample_rate # fixed value so changing envelope mid note doesnt break things
-        # # one_filler = np.full((self.ads_multiplier_array_length), 1.0)
-        # self.ads_multiplier_array = np.concatenate((np.linspace(0, 1.0, num=self.attack_frames), np.linspace(1.0, self.sustain, num=self.decay_frames)))
-        # self.ads_multiplier_array = np.pad(self.ads_multiplier_array, (0, self.ads_multiplier_array_length - len(self.ads_multiplier_array)), mode="constant", constant_values=self.sustain)
-
-        # self.r_multiplier_array_length = 4 * self.sample_rate
-        # self.r_multiplier_array = np.linspace(1.0, 0, num=self.release_frames)
-        # self.r_multiplier_array = np.pad(self.r_multiplier_array, (0, self.r_multiplier_array_length - len(self.r_multiplier_array)), mode="constant", constant_values=0.0)
-
-        # self.release_buffer = np.zeros(self.buffer_size) # stores last chunk of subcomponent signal & loops it for release
-
-        self.ads_on = False
-        self.r_on = False
+        # self.ads_on = False
+        # self.r_on = False
 
     def __iter__(self):
         self.subcomponent_iter = iter(self.subcomponents[0]) # one subcomponent. apply to mixer if global
         return self
 
     def __next__(self):
-        if self.active:
-            dry_signal = next(self.subcomponent_iter)
-            wet_signal = dry_signal # TEMP
+        return next(self.subcomponent_iter)
+    
+    @property
+    def attack(self):
+        return self._attack
 
-            # if self.ads_on:
-            #     # print("ads")
-            #     wet_signal = dry_signal
-            #     self.release_buffer = np.copy(dry_signal)
-            #     # print(self.release_buffer[0:5])
+    @attack.setter
+    def attack(self, value):
+        self._attack = value
+        self.attack_values = np.linspace(0.0, 1.0, np.int32(np.floor(self.attack / self.refresh_time)))
+        # self.attack_slope = 1.0 / value # to avoid division
+    
+    @property
+    def decay(self):
+        return self._decay
+    
+    @decay.setter
+    def decay(self, value):
+        self._decay = value
+        self.decay_values = np.linspace(1.0, self.sustain, np.int32(np.floor(self.decay / self.refresh_time)))
+        # self.decay_slope = (1.0 - self.sustain) / self.decay
+    
+    @property
+    def sustain(self):
+        return self._sustain
 
-            #     # # print(self.ads_multiplier_array[:self.buffer_size])
-            #     # wet_signal *= self.ads_multiplier_array[:self.buffer_size]
-            #     # self.ads_multiplier_array = np.roll(self.ads_multiplier_array, -self.buffer_size)
-            #     # self.ads_multiplier_array[-self.buffer_size:] = self.sustain
-            
-            # elif self.r_on:
-            #     # print("r")
-            #     wet_signal = self.release_buffer
-            #     # print(wet_signal[0:5] )
-                
-            #     # if np.max(self.r_multiplier_array) == 0.0: # cant be negative cuz volume
-            #     #     self.r_on = False
-            #     #     return
-
-            #     # wet_signal *= self.r_multiplier_array[:self.buffer_size]
-            #     # self.r_multiplier_array = np.roll(self.r_multiplier_array, -self.buffer_size)
-            #     # self.ads_multiplier_array[-self.buffer_size:] = 0.0
-            #     # if np.max(wet_signal) != 0.0:
-            #     #     print(wet_signal)
-            
-            # else:
-            #     wet_signal = np.zeros(self.buffer_size)
-
-            mix = dry_signal * (1 - self.wet) + wet_signal * self.wet
-            return mix.astype(np.float32)
-        else:
-            return next(self.subcomponent_iter)
+    @sustain.setter
+    def sustain(self, value):
+        self._sustain = value
+        self.decay_values = np.linspace(1.0, self.sustain, np.int32(np.floor(self.decay / self.refresh_time)))
+        # self.decay_slope = (1.0 - self.sustain) / self.decay
     
     def note_on(self):
-        self.ads_on = True
+        # self.ads_on = True
         
         # Attack
-        attack_start_time = time.time()
-        while (float(time.time()) <= (float(attack_start_time) + float(self.attack))) and (self.ads_on): # delete last two floats? test to see if it works
-            # print(float(attack_start_time) + float(self.attack) - float(time.time()))
+        # attack_start_time = time.time()
+        # while (float(time.time()) <= (float(attack_start_time) + float(self.attack))) and (self.ads_on): # delete last two floats? test to see if it works
+        #     # print(float(attack_start_time) + float(self.attack) - float(time.time()))
+        #     for oscillator in self.oscillators:
+        #         oscillator.amplitude = min(1, self.attack_slope * (time.time() - attack_start_time)) # precalculate division
+        #         # print(oscillator.amplitude)
+    #         time.sleep(self.refresh_time)
+        for value in self.attack_values:
             for oscillator in self.oscillators:
-                oscillator.amplitude = min(1, (1.0 / self.attack) * (time.time() - attack_start_time))
-                # print(oscillator.amplitude)
-                time.sleep(self.refresh_time)
+                oscillator.amplitude = value # precalculate division
+            time.sleep(self.refresh_time)
 
         # Decay
-        decay_start_time = time.time()
-        while (float(time.time()) <= (float(decay_start_time) + float(self.decay)) and (self.ads_on)):
-            # print(float(time.time()) - (float(decay_start_time + self.decay)))
+        # decay_start_time = time.time()
+        # while (float(time.time()) <= (float(decay_start_time) + float(self.decay)) and (self.ads_on)):
+        #     # print(float(time.time()) - (float(decay_start_time + self.decay)))
 
+        #     for oscillator in self.oscillators:
+        #         oscillator.amplitude = 1.0 - (self.decay_slope) * (time.time() - decay_start_time)
+        #         # print(oscillator.amplitude)
+        #     time.sleep(self.refresh_time)
+
+        for value in self.decay_values:
             for oscillator in self.oscillators:
-                oscillator.amplitude = 1.0 - ((1.0 - self.sustain) / self.decay) * (time.time() - decay_start_time)
-                # print(oscillator.amplitude)
-                time.sleep(self.refresh_time)
+                oscillator.amplitude = value # precalculate division
+            time.sleep(self.refresh_time)
 
-        for oscillator in self.oscillators:
-            oscillator.amplitude = self.sustain
+        # for oscillator in self.oscillators:
+        #     oscillator.amplitude = self.sustain
 
         sys.exit()
     
     def note_off(self, chain):
-        self.ads_on = False
-        self.r_on = True
+        # self.ads_on = False
+        # self.r_on = True
 
         release_amplitudes = []
         for oscillator in self.oscillators:
@@ -132,13 +120,13 @@ class Envelope(Component):
             # print(oscillator.amplitude)
             oscillator.amplitude = 0.0
 
-        self.r_on = False
+        # self.r_on = False
         chain.active = False
 
         sys.exit()
     
     def terminate(self, chain):
-        self.ads_on = False
+        # self.ads_on = False
         for oscillator in self.oscillators:
             oscillator.amplitude = 0.0
         chain.active = False
@@ -167,7 +155,7 @@ class Envelope(Component):
         copy.release = self.release
         copy.wet = self.wet
         
-        copy.ads_on = self.ads_on
-        copy.r_on = self.r_on
+        # copy.ads_on = self.ads_on
+        # copy.r_on = self.r_on
         self.log.info(f"deep copied envelope {self.name}!")
         return copy

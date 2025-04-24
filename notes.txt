@@ -22,6 +22,7 @@ x high pass filters
 x sqlite
 x ui
 x adsr
+- lfo---pre calculate values (might be tricky to respond to changes in parameters. not sure if needed)
 - anti aliasing
 - filter resonance
 

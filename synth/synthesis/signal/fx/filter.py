@@ -82,11 +82,10 @@ class Filter(Component):
             else:
                 self._wet = float_value
                 logging.info(f"Filter wet set to {self.wet}!")
-                self.b, self.a = self.compute_coefficients()
         except ValueError:
             logging.error(f"Couldn't set wet frequency with value {float_value}")
 
-    def compute_coefficients(self):
+    def compute_coefficients(self): # make sure this isnt called constantly
         nyquist = self.sample_rate * 0.5
         normalized_cutoff = self.cutoff / nyquist
         b, a = butter(self.filter_order, normalized_cutoff, btype=self.type, analog=False) # {‘lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’}
