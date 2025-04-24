@@ -1,4 +1,3 @@
-from queue import Queue
 import logging
 import numpy as np
 from typing import Callable
@@ -6,16 +5,15 @@ from threading import Thread
 import time
 import sys
 
+from .set_parameter import set_parameter
 from ..oscillator import Oscillator
 from ..fx.gain import OscillatorGain
 from ..fx.filter import Filter
-from ....midi import message_builder as mb
 
 class Lfo(Oscillator):
-    def __init__(self, sample_rate: int, buffer_size: int, formula: Callable, mailbox: Queue, name: str="Lfo", control_tag: str="lfo"):
+    def __init__(self, sample_rate: int, buffer_size: int, formula: Callable, name: str="Lfo", control_tag: str="lfo"):
         super().__init__(sample_rate, buffer_size, formula, name=name, control_tag=control_tag)
         self.log = logging.getLogger(__name__)
-        self.mailbox = mailbox
         self.refresh_time = 1 / self.sample_rate
 
         self.channel = 0
@@ -29,13 +27,13 @@ class Lfo(Oscillator):
         thread.start()
 
     def start_thread(self):
-        from ..fx.gain import OscillatorGain
         while True:
             try:
                 output = self.value_range[0] + (self.value_range[1] - self.value_range[0]) * (self.formula(self.frequency, self.phase, 0.5, time.time() - self.start_time) + 1.0) # frequency in seconds
                 # ctrl_msg = mb.builder().sender("midi").control_change().on_channel(self.channel).with_component("global").with_cc_number(self.cc_number).with_value(round(output)).build()
                 # self.mailbox.put(ctrl_msg)
                 # print(ctrl_msg)
+                set_parameter
                 for voice in self.voices:
                     components = voice.signal_chain.get_components_by_class(OscillatorGain)
                     for component in components:

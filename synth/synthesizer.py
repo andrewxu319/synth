@@ -8,6 +8,7 @@ from copy import deepcopy
 import numpy as np
 
 from . import midi
+from . import settings
 from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
@@ -30,24 +31,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.mailbox = mailbox
         self.num_voices = num_voices
         self.should_run = True
-
-        # Preset fx values to avoid doing division every time
-        self.amp_values = np.linspace(0, 1, 128)
-        self.filter_cutoff_values = np.logspace(4, 14.3, 128, endpoint=True, base=2, dtype=np.float32)
-        self.filter_wet_values = np.linspace(0, 1, 128)
-        self.envelope_attack_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
-        self.envelope_decay_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
-        self.envelope_sustain_values = np.linspace(0, 1, 128)
-        self.envelope_release_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
-        self.delay_time_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.5 # 0 to about 2 seconds
-        self.delay_feedback_values = (np.logspace(0, 1, 128, endpoint=True, base=10) - 1) / 9 # 0 to 1
-        self.delay_wet_values = np.linspace(0, 1, 128)
     
         # Set up the voices
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
-        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[3]["formula"], self.mailbox)
+        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[3]["formula"])
         lfo.cc_number = Implementation.OSC_1_AMP.value
         lfo.frequency = 1.0
         lfo.value_range = (0.1, 1.0)
@@ -313,7 +302,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_class(OscillatorGain)
             for component in components:
-                component.amplitude = self.amp_values[cc_value]
+                component.amplitude = settings.amp_values[cc_value]
     
     def set_hpf_cutoff(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
@@ -321,7 +310,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
-                component.cutoff = self.filter_cutoff_values[cc_value]
+                component.cutoff = settings.filter_cutoff_values[cc_value]
     
     def set_hpf_wet(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
@@ -329,7 +318,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
-                component.wet = self.filter_wet_values[cc_value]
+                component.wet = settings.filter_wet_values[cc_value]
 
     def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
@@ -337,7 +326,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
-                component.cutoff = self.filter_cutoff_values[cc_value]
+                component.cutoff = settings.filter_cutoff_values[cc_value]
     
     def set_lpf_wet(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
@@ -345,7 +334,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
-                component.wet = self.filter_wet_values[cc_value]
+                component.wet = settings.filter_wet_values[cc_value]
     
     def set_delay_time(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -353,7 +342,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
-                component.delay_time = self.delay_time_values[cc_value]
+                component.delay_time = settings.delay_time_values[cc_value]
 
     def set_delay_feedback(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -361,7 +350,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
-                component.feedback = self.delay_feedback_values[cc_value]
+                component.feedback = settings.delay_feedback_values[cc_value]
     
     def set_delay_wet(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -369,7 +358,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
-                component.wet = self.delay_wet_values[cc_value]
+                component.wet = settings.delay_wet_values[cc_value]
     
     def set_envelope_attack(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -377,7 +366,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
-                component.attack = self.envelope_attack_values[cc_value]
+                component.attack = settings.envelope_attack_values[cc_value]
 
     def set_envelope_decay(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -385,7 +374,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
-                component.decay = self.envelope_decay_values[cc_value]
+                component.decay = settings.envelope_decay_values[cc_value]
     
     def set_envelope_sustain(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -393,7 +382,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
-                component.sustain = self.envelope_sustain_values[cc_value]
+                component.sustain = settings.envelope_sustain_values[cc_value]
 
     def set_envelope_release(self, sender: str, cc_value: int):
         if sender != "ui":
@@ -401,4 +390,4 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
-                component.release = self.envelope_release_values[cc_value]
+                component.release = settings.envelope_release_values[cc_value]

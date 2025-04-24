@@ -3,6 +3,7 @@ import json
 import numpy as np
 from time import sleep
 
+from ..synthesis.signal.modulators.set_parameter import set_parameter
 from ..synthesis.signal.oscillator import Oscillator
 from ..synthesis.signal.fx.gain import OscillatorGain, VelocityGain
 from ..synthesis.signal.modulators.envelope import Envelope
@@ -15,11 +16,6 @@ class PresetHandler:
         self.file_path = ""
         self.oscillator_count_range = range(len(self.synthesizer.voices[0].signal_chain.get_components_by_class(Oscillator))) # maybe clean this up later
 
-    def find_nearest(self, array, value):
-        array = np.asarray(array)
-        index = (np.abs(array - value)).argmin()
-        return index
-    
     def save(self, file_path):
         self.file_path = file_path
         if file_path.split(".")[-1] != "json":
@@ -50,10 +46,10 @@ class PresetHandler:
             },
             "modulators": {
                 "envelope": {
-                    "attack": float(envelope.attack),
-                    "decay": float(envelope.decay),
-                    "sustain": float(envelope.sustain),
-                    "release": float(envelope.release)
+                    "attack": [float(envelope.attack)], # multiple envelopes in the future
+                    "decay": [float(envelope.decay)],
+                    "sustain": [float(envelope.sustain)],
+                    "release": [float(envelope.release)]
                 }
             },
             "performance": {
@@ -64,39 +60,68 @@ class PresetHandler:
         with open(file_path, "w") as file:
             file.write(json.dumps(parameters, indent=4))
 
+    def get_parameter_path(self, dictionary, path, path_list):
+        for key in dictionary.keys():
+            if isinstance(dictionary[key], dict):
+                child_path = path.copy()
+                child_path.append(key)
+                self.get_parameter_path(dictionary[key], child_path, path_list)
+            elif isinstance(dictionary[key], list):
+                for i in range(len(dictionary[key])):
+                    child_path = path.copy()
+                    child_path.append(key)
+                    child_path.append(i)
+                    path_list.append(child_path)
+            else:
+                child_path = path.copy()
+                child_path.append(key)
+                path_list.append(child_path)
+
+    def get_parameter_value(self, dictionary, path):
+        dictionary_copy = dictionary.copy()
+        for key in path:
+            dictionary = dictionary[key]
+        return dictionary
+
     def load(self, file_path, window):
         with open(file_path, "r") as file:
             dictionary = json.load(file)
         
         try:
-            # Oscillators
-            for i in self.oscillator_count_range:
-                osc = window.osc_tab.osc_list[i]
-                osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
-                osc.active_checkbox.setChecked(dictionary["oscillators"]["active"][i])
-                osc.gain_dial.setValue(self.find_nearest(self.synthesizer.amp_values, dictionary["oscillators"]["oscillator_gain"][i]))
-                osc.hpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoff"][i]))
-                osc.hpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["hpf_wet"][i]))
-                osc.lpf_cutoff_dial.setValue(self.find_nearest(self.synthesizer.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoff"][i]))
-                osc.lpf_wet_dial.setValue(self.find_nearest(self.synthesizer.filter_wet_values, dictionary["oscillators"]["lpf_wet"][i]))
+            path_list = []
+            self.get_parameter_path(dictionary, [], path_list)
+            print(f"tagtag + {path_list}")
+            for path in path_list:
+                set_parameter(window, path, self.get_parameter_value(dictionary, path), self.oscillator_count_range)
 
-            # FX
-            delay = window.fx_tab.delay_fx
-            delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
-            delay.delay_time_dial.setValue(self.find_nearest(self.synthesizer.delay_time_values, dictionary["fx"]["delay"]["time"]))
-            delay.delay_feedback_dial.setValue(self.find_nearest(self.synthesizer.delay_feedback_values, dictionary["fx"]["delay"]["feedback"]))
-            delay.delay_wet_dial.setValue(self.find_nearest(self.synthesizer.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
+            # # Oscillators
+            # for i in self.oscillator_count_range:
+            #     osc = window.osc_tab.osc_list[i]
+            #     osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
+            #     osc.active_checkbox.setChecked(dictionary["oscillators"]["active"][i])
+            #     osc.gain_dial.setValue(self.find_nearest(settings.amp_values, dictionary["oscillators"]["oscillator_gain"][i]))
+            #     osc.hpf_cutoff_dial.setValue(self.find_nearest(settings.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoff"][i]))
+            #     osc.hpf_wet_dial.setValue(self.find_nearest(settings.filter_wet_values, dictionary["oscillators"]["hpf_wet"][i]))
+            #     osc.lpf_cutoff_dial.setValue(self.find_nearest(settings.filter_cutoff_values, dictionary["oscillators"]["lpf_cutoff"][i]))
+            #     osc.lpf_wet_dial.setValue(self.find_nearest(settings.filter_wet_values, dictionary["oscillators"]["lpf_wet"][i]))
 
-            # Modulators
-            envelope = window.osc_tab.envelope_section
-            envelope.attack_dial.setValue(self.find_nearest(self.synthesizer.envelope_attack_values, dictionary["modulators"]["envelope"]["attack"]))
-            envelope.decay_dial.setValue(self.find_nearest(self.synthesizer.envelope_decay_values, dictionary["modulators"]["envelope"]["decay"]))
-            envelope.sustain_dial.setValue(self.find_nearest(self.synthesizer.envelope_sustain_values, dictionary["modulators"]["envelope"]["sustain"]))
-            envelope.release_dial.setValue(self.find_nearest(self.synthesizer.envelope_release_values, dictionary["modulators"]["envelope"]["release"]))
+            # # FX
+            # delay = window.fx_tab.delay_fx
+            # delay.active_checkbox.setChecked(dictionary["fx"]["delay"]["active"])
+            # delay.delay_time_dial.setValue(self.find_nearest(settings.delay_time_values, dictionary["fx"]["delay"]["time"]))
+            # delay.delay_feedback_dial.setValue(self.find_nearest(settings.delay_feedback_values, dictionary["fx"]["delay"]["feedback"]))
+            # delay.delay_wet_dial.setValue(self.find_nearest(settings.delay_wet_values, dictionary["fx"]["delay"]["wet"]))
 
-            # Performance
-            performance = window.osc_tab.performance_section
-            performance.velocity_sensitivity_dial.setValue(dictionary["performance"]["velocity_sensitivity"])
+            # # Modulators
+            # envelope = window.osc_tab.envelope_section
+            # envelope.attack_dial.setValue(self.find_nearest(settings.envelope_attack_values, dictionary["modulators"]["envelope"]["attack"]))
+            # envelope.decay_dial.setValue(self.find_nearest(settings.envelope_decay_values, dictionary["modulators"]["envelope"]["decay"]))
+            # envelope.sustain_dial.setValue(self.find_nearest(settings.envelope_sustain_values, dictionary["modulators"]["envelope"]["sustain"]))
+            # envelope.release_dial.setValue(self.find_nearest(settings.envelope_release_values, dictionary["modulators"]["envelope"]["release"]))
+
+            # # Performance
+            # performance = window.osc_tab.performance_section
+            # performance.velocity_sensitivity_dial.setValue(dictionary["performance"]["velocity_sensitivity"])
         
         except KeyError as e:
             self.save(file_path)
