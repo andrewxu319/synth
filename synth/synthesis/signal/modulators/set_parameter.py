@@ -81,7 +81,3 @@ def set_parameter(window: MainWindow, path: str, value, oscillator_count_range: 
                 case _:
                     log.warning(f"Attempted to change nonexistent parameter {sublevels} in performance!")
 
-def find_nearest(values_array, value):
-    values_array = np.asarray(values_array)
-    index = (np.abs(values_array - value)).argmin()
-    return index

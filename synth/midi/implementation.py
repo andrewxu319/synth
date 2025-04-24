@@ -1,6 +1,7 @@
 from enum import Enum
 
 class Implementation(Enum):
+    # CHANGE TO LISTS
     OSC_1_AMP = 14
     OSC_2_AMP = 15
     OSC_3_AMP = 16

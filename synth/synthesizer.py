@@ -15,7 +15,7 @@ from .synthesis.signal.chain import Chain
 from .synthesis.signal.oscillator_library import OscillatorLibrary
 from .synthesis.signal.oscillator import Oscillator
 from .synthesis.signal.fx.gain import OscillatorGain, VelocityGain
-from .synthesis.signal.fx.filter import Filter
+from .synthesis.signal.fx.filter import Hpf, Lpf
 from .synthesis.signal.mixer import Mixer
 from .synthesis.signal.modulators.envelope import Envelope
 from .synthesis.signal.fx.delay import Delay
@@ -36,12 +36,12 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
-        lfo = Lfo(self.sample_rate, self.buffer_size, self.oscillator_library[3]["formula"])
-        lfo.cc_number = Implementation.OSC_1_AMP.value
+        lfo = Lfo(self.sample_rate, self.buffer_size, self.voices)
+        lfo.formula = self.oscillator_library[3]["formula"]
+        lfo.parameter = [OscillatorGain, "amplitude", 0]
         lfo.frequency = 1.0
         lfo.value_range = (0.1, 1.0)
-        lfo.voices = self.voices
-        # lfo.start()
+        lfo.start()
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)
@@ -58,8 +58,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.oscillator_library = OscillatorLibrary(self.sample_rate, self.buffer_size).oscillators
         self.oscillators = [Oscillator(self.sample_rate, self.buffer_size, oscillator["formula"], oscillator["name"], oscillator["control_tag"]) for oscillator in self.oscillator_library]
         oscillator_gains = [OscillatorGain(self.sample_rate, self.buffer_size, subcomponents=[self.oscillators[i]], control_tag=f"oscillator_gain_{i}") for i in range(len(self.oscillators))]
-        hpfs = [Filter(self.sample_rate, self.buffer_size, "highpass", subcomponents=[oscillator_gains[i]], control_tag=f"hpf_{i}") for i in range(len(oscillator_gains))]
-        lpfs = [Filter(self.sample_rate, self.buffer_size, "lowpass", subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(oscillator_gains))]
+        hpfs = [Hpf(self.sample_rate, self.buffer_size, subcomponents=[oscillator_gains[i]], control_tag=f"hpf_{i}") for i in range(len(oscillator_gains))]
+        lpfs = [Lpf(self.sample_rate, self.buffer_size, subcomponents=[hpfs[i]], control_tag=f"lpf_{i}") for i in range(len(oscillator_gains))]
         mixer = Mixer(self.sample_rate, self.buffer_size, subcomponents=lpfs)
         velocity_gain = VelocityGain(self.sample_rate, self.buffer_size, subcomponents=[mixer])
         envelope = Envelope(self.sample_rate, self.buffer_size, subcomponents=[velocity_gain])

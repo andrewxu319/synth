@@ -94,3 +94,27 @@ class Filter(Component):
     def compute_initial_conditions(self):
         zi = lfilter_zi(self.b, self.a)
         return zi
+
+class Hpf(Filter):
+    def __init__(self, sample_rate, buffer_size, subcomponents: List["Component"] = [], name="hpf", control_tag="hpf"):
+        super().__init__(sample_rate, buffer_size, "highpass", subcomponents, name=name, control_tag=control_tag)
+    
+    def __deepcopy__(self, memo):
+        copy = Hpf(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        copy.cutoff = self.cutoff
+        copy.wet = self.wet
+        self.log.info(f"Deep copied hpf {self.name} with active {self.active} and freq {self.cutoff}")
+        return copy
+
+class Lpf(Filter):
+    def __init__(self, sample_rate, buffer_size, subcomponents: List["Component"] = [], name="lpf", control_tag="lpf"):
+        super().__init__(sample_rate, buffer_size, "lowpass", subcomponents, name=name, control_tag=control_tag)
+    
+    def __deepcopy__(self, memo):
+        copy = Lpf(self.sample_rate, self.buffer_size, subcomponents=[deepcopy(subcomponent, memo) for subcomponent in self.subcomponents], name=self.name, control_tag=self.control_tag)
+        copy.active = self.active
+        copy.cutoff = self.cutoff
+        copy.wet = self.wet
+        self.log.info(f"Deep copied lpf {self.name} with active {self.active} and freq {self.cutoff}")
+        return copy

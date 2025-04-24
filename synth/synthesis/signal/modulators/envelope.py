@@ -24,7 +24,7 @@ class Envelope(Component):
         self.release = 0.5
         self.wet = 1.0
 
-        # self.ads_on = False
+        self.ads_on = False
         # self.r_on = False
 
     def __iter__(self):
@@ -65,7 +65,7 @@ class Envelope(Component):
         # self.decay_slope = (1.0 - self.sustain) / self.decay
     
     def note_on(self):
-        # self.ads_on = True
+        self.ads_on = True
         
         # Attack
         # attack_start_time = time.time()
@@ -76,6 +76,8 @@ class Envelope(Component):
         #         # print(oscillator.amplitude)
     #         time.sleep(self.refresh_time)
         for value in self.attack_values:
+            if self.ads_on == False:
+                sys.exit()
             for oscillator in self.oscillators:
                 oscillator.amplitude = value # precalculate division
             time.sleep(self.refresh_time)
@@ -91,6 +93,8 @@ class Envelope(Component):
         #     time.sleep(self.refresh_time)
 
         for value in self.decay_values:
+            if self.ads_on == False:
+                sys.exit()
             for oscillator in self.oscillators:
                 oscillator.amplitude = value # precalculate division
             time.sleep(self.refresh_time)
@@ -101,21 +105,17 @@ class Envelope(Component):
         sys.exit()
     
     def note_off(self, chain):
-        # self.ads_on = False
+        self.ads_on = False
         # self.r_on = True
 
         release_amplitudes = []
         for oscillator in self.oscillators:
             release_amplitudes.append(oscillator.amplitude)
-        # print(release_amplitudes)
         release_start_time = time.time()
         while float(time.time()) <= (float(release_start_time) + float(self.release)):
             for i, oscillator in enumerate(self.oscillators):
                 oscillator.amplitude = max(0, release_amplitudes[i] - (release_amplitudes[i] / self.release) * (time.time() - release_start_time))
             time.sleep(self.refresh_time)
-        # print(float(time.time()) - float(release_start_time))
-        # print(self.release)
-        # print("release complete!")
         for oscillator in self.oscillators:
             # print(oscillator.amplitude)
             oscillator.amplitude = 0.0
@@ -126,7 +126,7 @@ class Envelope(Component):
         sys.exit()
     
     def terminate(self, chain):
-        # self.ads_on = False
+        self.ads_on = False
         for oscillator in self.oscillators:
             oscillator.amplitude = 0.0
         chain.active = False
@@ -155,7 +155,7 @@ class Envelope(Component):
         copy.release = self.release
         copy.wet = self.wet
         
-        # copy.ads_on = self.ads_on
+        copy.ads_on = self.ads_on
         # copy.r_on = self.r_on
         self.log.info(f"deep copied envelope {self.name}!")
         return copy

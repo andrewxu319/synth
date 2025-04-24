@@ -5,20 +5,52 @@ from threading import Thread
 import time
 import sys
 
-from .set_parameter import set_parameter
 from ..oscillator import Oscillator
-from ..fx.gain import OscillatorGain
-from ..fx.filter import Filter
+from ..fx.gain import OscillatorGain, VelocityGain
+from ..fx.filter import Hpf, Lpf
+from ..mixer import Mixer
+from ..modulators.envelope import Envelope
+from ..fx.delay import Delay
 
 class Lfo(Oscillator):
-    def __init__(self, sample_rate: int, buffer_size: int, formula: Callable, name: str="Lfo", control_tag: str="lfo"):
-        super().__init__(sample_rate, buffer_size, formula, name=name, control_tag=control_tag)
+    def __init__(self, sample_rate: int, buffer_size: int, voices: list, name: str="Lfo", control_tag: str="lfo"):
+        super().__init__(sample_rate, buffer_size, lambda frequency, phase, amplitude, t: 0.0, name=name, control_tag=control_tag)
         self.log = logging.getLogger(__name__)
+        self.voices = voices
         self.refresh_time = 1 / self.sample_rate
 
         self.channel = 0
-        self.cc_number = 0
+        self.parameter = ()
         self.value_range = (0.0, 1.0)
+
+        # # do ts later as needed
+        # self.parameters = {
+        #     "oscillators": {
+        #         "oscillator_gain": (OscillatorGain, lambda component, value: setattr),
+        #         "hpf_cutoff": (Hpf, lambda component, value: component.cutoff),
+        #         "hpf_wet": (Hpf, lambda component, value: component.wet),
+        #         "lpf_cutoff": (Lpf, lambda component, value: component.cutoff),
+        #         "lpf_wet": (Lpf, lambda component, value: component.wet)
+        #     },
+        #     "fx": {
+        #         "delay": {
+        #             "time": delay.delay_time,
+        #             "feedback": delay.feedback,
+        #             "wet": delay.wet
+        #         }
+        #     },
+        #     "modulators": {
+        #         "envelope": {
+        #             "attack": [float(envelope.attack)], # multiple envelopes in the future
+        #             "decay": [float(envelope.decay)],
+        #             "sustain": [float(envelope.sustain)],
+        #             "release": [float(envelope.release)]
+        #         }
+        #     },
+        #     "performance": {
+        #         "velocity_sensitivity": chain.get_components_by_class(VelocityGain)[0].velocity_sensitivity
+        #     }
+        # }
     
     def start(self):
         thread = Thread(target=self.start_thread)
@@ -30,20 +62,68 @@ class Lfo(Oscillator):
         while True:
             try:
                 output = self.value_range[0] + (self.value_range[1] - self.value_range[0]) * (self.formula(self.frequency, self.phase, 0.5, time.time() - self.start_time) + 1.0) # frequency in seconds
-                # ctrl_msg = mb.builder().sender("midi").control_change().on_channel(self.channel).with_component("global").with_cc_number(self.cc_number).with_value(round(output)).build()
-                # self.mailbox.put(ctrl_msg)
-                # print(ctrl_msg)
-                set_parameter
+                # self.set_parameter(self.parameter, output)
                 for voice in self.voices:
-                    components = voice.signal_chain.get_components_by_class(OscillatorGain)
-                    for component in components:
-                        component.amplitude = output
-                time.sleep(self.refresh_time)
+                    component = voice.signal_chain.get_components_by_class(self.parameter[0])[self.parameter[2] if len(self.parameter) == 3 else 0]
+                    setattr(component, self.parameter[1], output)
+                time.sleep(200 * self.refresh_time)
 
             except KeyboardInterrupt:
                 break
         sys.exit()
+    
+    # def set_parameter(self, parameter: list, value):
+    #     for voice in self.voices:
+    #         components = voice.signal_chain.get_components_by_class(OscillatorGain)
+    #         for component in components:
+    #             component.amplitude = output
             
+    #         match parameter:
+    #             case ["oscillators", *sublevels, i]:
+    #                 components = voice.signal_chain.get_components_by_class(OscillatorGain)
+
+    #             case ["fx", *sublevels]:
+    #                 match sublevels:
+    #                     case ["delay", *sublevels]:
+    #                         delay = window.fx_tab.delay_fx
+
+    #                     case _:
+    #                         log.warning(f"Attempted to change nonexistent parameter {sublevels} in fx!")
+
+    #             case ["modulators", *sublevels]:
+    #                 match sublevels:
+    #                     case ["envelope", *sublevels, i]:
+    #                         envelope = window.osc_tab.envelope_section # make it numbered later
+    #                         match sublevels:
+    #                             case ["attack"]:
+    #                                 envelope.attack_dial.setValue(find_nearest(settings.envelope_attack_values, value))
+    #                             case ["decay"]:
+    #                                 envelope.decay_dial.setValue(find_nearest(settings.envelope_decay_values, value))
+    #                             case ["sustain"]:
+    #                                 envelope.sustain_dial.setValue(find_nearest(settings.envelope_sustain_values, value))
+    #                             case ["release"]:
+    #                                 envelope.release_dial.setValue(find_nearest(settings.envelope_release_values, value))
+    #                             case _:
+    #                                 log.warning(f"Attempted to change nonexistent parameter {sublevels} in modulators -> envelope!")
+
+    #                     case _:
+    #                         log.warning(f"Attempted to change nonexistent parameter {sublevels} in modulators!")
+
+    #             case ["performance", *sublevels]:
+    #                 performance = window.osc_tab.performance_section
+
+    #                 match sublevels:
+    #                     case ["velocity_sensitivity"]:
+    #                         performance.velocity_sensitivity_dial.setValue(value)
+
+    #                     case _:
+    #                         log.warning(f"Attempted to change nonexistent parameter {sublevels} in performance!")
+
+    # def get_parameter_value(self, dictionary, path):
+    #     dictionary_copy = dictionary.copy()
+    #     for key in path:
+    #         dictionary = dictionary[key]
+    #     return dictionary
 
     @property
     def active(self):
