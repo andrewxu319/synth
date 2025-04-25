@@ -4,6 +4,7 @@ import PyQt6.QtCore as QtCore
 import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 
+from .widgets.checkbox import CheckBox
 from .widgets.color import Color
 
 class DelayFx(QtWidgets.QWidget):
@@ -14,7 +15,7 @@ class DelayFx(QtWidgets.QWidget):
     
         layout = QtWidgets.QHBoxLayout()
 
-        self.active_checkbox = QtWidgets.QCheckBox()
+        self.active_checkbox = CheckBox()
         self.active_checkbox.stateChanged.connect(self.set_active)
 
         self.delay_time_dial = QtWidgets.QDial()

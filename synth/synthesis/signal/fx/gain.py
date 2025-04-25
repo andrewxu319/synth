@@ -41,6 +41,7 @@ class Gain(Component):
             float_value = float(value)
             if float_value >= 0 and float_value <= 1.9:
                 self._amplitude = float_value
+                self.log.warning(f"{self.control_tag} set to {float_value}")
             else:
                 raise ValueError
         except ValueError:

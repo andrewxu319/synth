@@ -25,7 +25,6 @@ class PresetHandler:
         chain = self.synthesizer.voices[0].signal_chain
         envelope = chain.get_components_by_class(Envelope)[0]
         delay = chain.get_components_by_class(Delay)[0]
-
         parameters = {
             "oscillators": {
                 "active": [chain.get_components_by_control_tag(f"osc_{i}")[0].active for i in self.oscillator_count_range],
@@ -98,7 +97,7 @@ class PresetHandler:
             # Oscillators
             for i in self.oscillator_count_range:
                 osc = window.osc_tab.osc_list[i]
-                osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
+                # osc.active_checkbox.setChecked(True) # unsure why but need to first setChecked(True) otherwise stateChanged wont trigger if checking false
                 osc.active_checkbox.setChecked(dictionary["oscillators"]["active"][i])
                 osc.gain_dial.setValue(self.find_nearest(settings.amp_values, dictionary["oscillators"]["oscillator_gain"][i]))
                 osc.hpf_cutoff_dial.setValue(self.find_nearest(settings.filter_cutoff_values, dictionary["oscillators"]["hpf_cutoff"][i]))
@@ -115,6 +114,7 @@ class PresetHandler:
 
             # Modulators
             envelope = window.osc_tab.envelope_section
+
             envelope.attack_dial.setValue(self.find_nearest(settings.envelope_attack_values, dictionary["modulators"]["envelope"]["attack"]))
             envelope.decay_dial.setValue(self.find_nearest(settings.envelope_decay_values, dictionary["modulators"]["envelope"]["decay"]))
             envelope.sustain_dial.setValue(self.find_nearest(settings.envelope_sustain_values, dictionary["modulators"]["envelope"]["sustain"]))

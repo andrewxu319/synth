@@ -30,4 +30,4 @@ https://github.com/Akascape/TkDial
 
 https://www.reddit.com/r/synthesizers/comments/15webnf/i_built_a_4voice_software_synthesizer_with_python/
 
-enable REPEATED NOTES
+TO DO: fix adsr save problem

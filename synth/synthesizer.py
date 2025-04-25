@@ -36,16 +36,16 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
-        lfo = Lfo(self.sample_rate, self.buffer_size, self.voices)
-        lfo.formula = self.oscillator_library[3]["formula"]
-        lfo.parameter = [OscillatorGain, "amplitude", 0]
-        lfo.frequency = 1.0
-        lfo.value_range = (0.1, 1.0)
-        lfo.start()
+        # lfo = Lfo(self.sample_rate, self.buffer_size, self.voices)
+        # lfo.formula = self.oscillator_library[3]["formula"]
+        # lfo.parameter = [OscillatorGain, "amplitude", 0]
+        # lfo.frequency = 1.0
+        # lfo.variation = 0.5
+        # lfo.start()
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)
-    
+
     def run(self):
         self.stream_player.play()
         while self.should_run and self.stream_player.is_active():
@@ -94,6 +94,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             lpfs[i].cutoff = self.lpf_cutoff_status[i]
             logging.info(f"lpf FREQ active {lpfs[i].active} frequency {lpfs[i].cutoff}")
         velocity_gain.amplitude = self.velocity_gain_amplitude_status
+
         delay.active = self.delay_active_status
         delay.delay_time = self.delay_time_status
         delay.feedback = self.delay_feedback_status
@@ -128,6 +129,10 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                     int_cc_number = cc_number
                 int_value = int(value)
                 self.control_change_handler(sender, int_channel, component, int_cc_number, int_value)
+
+                # for voice in self.voices:
+                #     for lfo in voice.signal_chain.get_components_by_class(Lfo):
+                #         lfo.update_starting_value()
             case [sender, "set_active", "-c", channel, "-o", component, "-v", value]:
                 self.set_active(sender, int(channel), component, value=="True")
             case _:
@@ -244,6 +249,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
             if not voice.active:
                 component = voice.signal_chain.get_components_by_class(VelocityGain)[0]
                 component.amplitude = component.amp_values[velocity]
+
                 voice.note_on(freq, note_id)
                 self.voices.append(self.voices.pop(i))
                 break
@@ -253,6 +259,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
                 self.voices[0].terminate() # force end release
                 component = voice.signal_chain.get_components_by_class(VelocityGain)[0]
                 component.amplitude = component.amp_values[velocity]
+
                 self.voices[0].note_on(freq, note_id)
                 self.voices.append(self.voices.pop(0))
     
@@ -300,7 +307,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         if sender != "ui":
             self.ui.window.osc_tab.osc_list[number].gain_dial.setValue(cc_value)
         for voice in self.voices:
-            components = voice.signal_chain.get_components_by_class(OscillatorGain)
+            components = voice.signal_chain.get_components_by_control_tag(f"oscillator_gain_{number}")
             for component in components:
                 component.amplitude = settings.amp_values[cc_value]
     

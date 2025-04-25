@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_option("-p", "--port", dest="midi_port", default=None, help="MIDI port to listen on", metavar="MIDI PORT") # python -m synth -p "KOMPLETE KONTROL A49 MIDI 0"
     (options, args) = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO,  # warning
+    logging.basicConfig(level=logging.WARNING,  # warning
                         format='%(asctime)s [%(levelname)s] %(module)s [%(funcName)s]: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -38,6 +38,7 @@ if __name__ == "__main__":
     midi_listen_port = options.midi_port if options.midi_port else settings.auto_attach
     # midi_listen_port = available_ports[0] # !!!!!!!!!!!
     log.info(f"Using MIDI port {midi_listen_port}")
+
     midi_listener = MidiListener(thread_mailbox, synth_mailbox, midi_listen_port)
 
     synthesizer = Synthesizer(settings.sample_rate, settings.buffer_size, synth_mailbox, settings.voices, settings.output_device)
@@ -55,12 +56,12 @@ if __name__ == "__main__":
 
         midi_listener.start()
         ui_listener.start()
-        ui.start()
         synthesizer.start()
+        ui.start()
         while True:
             thread_count = threading.active_count()
             if current_threads != thread_count:
-                log.warning(f"Thread count changed to: {thread_count}")
+                log.info(f"Thread count changed to: {thread_count}")
             sleep(1)
     except KeyboardInterrupt:
         preset_handler.autosave()      

@@ -4,6 +4,8 @@ import PyQt6.QtCore as QtCore
 import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 
+from .widgets.checkbox import CheckBox
+from .widgets.dial import Dial
 from .widgets.color import Color
 
 class OscillatorSection(QtWidgets.QWidget):
@@ -17,35 +19,35 @@ class OscillatorSection(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
 
-        self.active_checkbox = QtWidgets.QCheckBox()
+        self.active_checkbox = CheckBox()
         self.active_checkbox.stateChanged.connect(self.set_active)
 
-        self.gain_dial = QtWidgets.QDial()
+        self.gain_dial = Dial()
         self.gain_dial.setRange(0, 127)
         self.gain_dial.setSingleStep(1)
         self.gain_dial.setMinimumSize(1,1)
         self.gain_dial.valueChanged.connect(self.set_gain)
 
-        self.hpf_cutoff_dial = QtWidgets.QDial()
+        self.hpf_cutoff_dial = Dial()
         self.hpf_cutoff_dial.setRange(0, 127)
         self.hpf_cutoff_dial.setSingleStep(1)
         self.hpf_cutoff_dial.setMinimumSize(1,1)
         self.hpf_cutoff_dial.valueChanged.connect(self.set_hpf_cutoff)
 
-        self.hpf_wet_dial = QtWidgets.QDial()
+        self.hpf_wet_dial = Dial()
         self.hpf_wet_dial.setRange(0, 127)
         self.hpf_wet_dial.setSingleStep(1)
         self.hpf_wet_dial.setMinimumSize(1,1)
         self.hpf_wet_dial.valueChanged.connect(self.set_hpf_wet)
 
 
-        self.lpf_cutoff_dial = QtWidgets.QDial()
+        self.lpf_cutoff_dial = Dial()
         self.lpf_cutoff_dial.setRange(0, 127)
         self.lpf_cutoff_dial.setSingleStep(1)
         self.lpf_cutoff_dial.setMinimumSize(1,1)
         self.lpf_cutoff_dial.valueChanged.connect(self.set_lpf_cutoff)
 
-        self.lpf_wet_dial = QtWidgets.QDial()
+        self.lpf_wet_dial = Dial()
         self.lpf_wet_dial.setRange(0, 127)
         self.lpf_wet_dial.setSingleStep(1)
         self.lpf_wet_dial.setMinimumSize(1,1)
@@ -136,45 +138,52 @@ class EnvelopeSection(QtWidgets.QWidget):
         self.ui_listener_mailbox = ui_listener_mailbox
         self.log = logging.getLogger(__name__)
 
-        layout = QtWidgets.QHBoxLayout()
+        layout = QtWidgets.QGridLayout()
 
-        self.attack_dial = QtWidgets.QDial()
+        self.attack_dial = Dial()
         self.attack_dial.setRange(0, 127)
         self.attack_dial.setSingleStep(1)
         self.attack_dial.setMinimumSize(1,1)
         self.attack_dial.valueChanged.connect(self.set_attack)
 
-        self.decay_dial = QtWidgets.QDial()
+        self.decay_dial = Dial()
         self.decay_dial.setRange(0, 127)
         self.decay_dial.setSingleStep(1)
         self.decay_dial.setMinimumSize(1,1)
         self.decay_dial.valueChanged.connect(self.set_decay)
 
-        self.sustain_dial = QtWidgets.QDial()
+        self.sustain_dial = Dial()
         self.sustain_dial.setRange(0, 127)
         self.sustain_dial.setSingleStep(1)
         self.sustain_dial.setMinimumSize(1,1)
         self.sustain_dial.valueChanged.connect(self.set_sustain)
 
-        self.release_dial = QtWidgets.QDial()
+        self.release_dial = Dial()
         self.release_dial.setRange(0, 127)
         self.release_dial.setSingleStep(1)
         self.release_dial.setMinimumSize(1,1)
         self.release_dial.valueChanged.connect(self.set_release)
 
-        layout.addWidget(QtWidgets.QLabel(text="Envelope"))
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
-        layout.addWidget(self.attack_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Decay:"))
-        layout.addWidget(self.decay_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Sustain:"))
-        layout.addWidget(self.sustain_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Release:"))
-        layout.addWidget(self.release_dial)
+        layout.addWidget(QtWidgets.QLabel(text="Envelope"), 0, 0)
+        attack_layout = QtWidgets.QHBoxLayout()
+        attack_layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
+        attack_layout.addWidget(self.attack_dial)
+        layout.addLayout(attack_layout, 1, 0)
+
+        decay_layout = QtWidgets.QHBoxLayout()
+        decay_layout.addWidget(QtWidgets.QLabel(text=f"Decay:"))
+        decay_layout.addWidget(self.decay_dial)
+        layout.addLayout(decay_layout, 1, 1)
+
+        sustain_layout = QtWidgets.QHBoxLayout()
+        sustain_layout.addWidget(QtWidgets.QLabel(text=f"Sustain:"))
+        sustain_layout.addWidget(self.sustain_dial)
+        layout.addLayout(sustain_layout, 2, 0)
+
+        release_layout = QtWidgets.QHBoxLayout()
+        release_layout.addWidget(QtWidgets.QLabel(text=f"Release:"))
+        release_layout.addWidget(self.release_dial)
+        layout.addLayout(release_layout, 2, 1)
 
         self.setLayout(layout)
     
@@ -221,7 +230,54 @@ class EnvelopeSection(QtWidgets.QWidget):
             "control_implementation": "ENV_RELEASE",
             "value": value
         })
-    
+
+class LfoSection(QtWidgets.QWidget):
+    def __init__(self, ui_listener_mailbox):
+        super().__init__()
+        self.log = logging.getLogger(__name__)
+
+        layout = QtWidgets.QHBoxLayout()
+
+        self.attack_dial = Dial()
+        self.attack_dial.setRange(0, 127)
+        self.attack_dial.setSingleStep(1)
+        self.attack_dial.setMinimumSize(1,1)
+        self.attack_dial.valueChanged.connect(self.set_attack)
+
+        self.decay_dial = Dial()
+        self.decay_dial.setRange(0, 127)
+        self.decay_dial.setSingleStep(1)
+        self.decay_dial.setMinimumSize(1,1)
+        self.decay_dial.valueChanged.connect(self.set_decay)
+
+        self.sustain_dial = Dial()
+        self.sustain_dial.setRange(0, 127)
+        self.sustain_dial.setSingleStep(1)
+        self.sustain_dial.setMinimumSize(1,1)
+        self.sustain_dial.valueChanged.connect(self.set_sustain)
+
+        self.release_dial = Dial()
+        self.release_dial.setRange(0, 127)
+        self.release_dial.setSingleStep(1)
+        self.release_dial.setMinimumSize(1,1)
+        self.release_dial.valueChanged.connect(self.set_release)
+
+        layout.addWidget(QtWidgets.QLabel(text="Envelope"))
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
+        layout.addWidget(self.attack_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Decay:"))
+        layout.addWidget(self.decay_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Sustain:"))
+        layout.addWidget(self.sustain_dial)
+        layout.addStretch()
+        layout.addWidget(QtWidgets.QLabel(text=f"Release:"))
+        layout.addWidget(self.release_dial)
+
+        self.setLayout(layout)
+
 class PerformanceSection(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
         super().__init__()
@@ -230,7 +286,7 @@ class PerformanceSection(QtWidgets.QWidget):
 
         layout = QtWidgets.QVBoxLayout()
 
-        self.velocity_sensitivity_dial = QtWidgets.QDial()
+        self.velocity_sensitivity_dial = Dial()
         self.velocity_sensitivity_dial.setRange(0, 127)
         self.velocity_sensitivity_dial.setSingleStep(1)
         self.velocity_sensitivity_dial.setMinimumSize(1,1)
@@ -288,7 +344,10 @@ class OscTab(QtWidgets.QWidget):
         bottom_section = QtWidgets.QHBoxLayout()
 
         self.envelope_section = EnvelopeSection(self.ui_listener_mailbox)
-        bottom_section.addWidget(self.envelope_section, 5)
+        bottom_section.addWidget(self.envelope_section, 2)
+
+        self.lfo_section = Color("red")
+        bottom_section.addWidget(self.lfo_section, 2)
 
         self.performance_section = PerformanceSection(self.ui_listener_mailbox)
         bottom_section.addWidget(self.performance_section, 1)

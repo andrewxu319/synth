@@ -21,9 +21,9 @@ class Lfo(Oscillator):
 
         self.channel = 0
         self.parameter = ()
-        self.value_range = (0.0, 1.0)
+        self.variation = 0.0
 
-        # # do ts later as needed
+        # # do ts later if needed, standardize between midi cc controls and lfo controls
         # self.parameters = {
         #     "oscillators": {
         #         "oscillator_gain": (OscillatorGain, lambda component, value: setattr),
@@ -53,25 +53,32 @@ class Lfo(Oscillator):
         # }
     
     def start(self):
-        thread = Thread(target=self.start_thread)
+        self.thread = Thread(target=self.start_thread)
         self.start_time = time.time()
         # breakpoint()
-        thread.start()
+        self.thread.start()
 
     def start_thread(self):
+        self.parameter_name = self.parameter[1]
+        self.update_starting_value()
+
         while True:
             try:
-                output = self.value_range[0] + (self.value_range[1] - self.value_range[0]) * (self.formula(self.frequency, self.phase, 0.5, time.time() - self.start_time) + 1.0) # frequency in seconds
+                value_change = self.variation * (self.formula(self.frequency, self.phase, 1.0, time.time() - self.start_time) + 1.0) # frequency in seconds
                 # self.set_parameter(self.parameter, output)
                 for voice in self.voices:
                     component = voice.signal_chain.get_components_by_class(self.parameter[0])[self.parameter[2] if len(self.parameter) == 3 else 0]
-                    setattr(component, self.parameter[1], output)
+                    setattr(component, self.parameter_name, np.clip(self.starting_value + value_change, 0.0, 1.0)) # change 0.0 and 1.0
                 time.sleep(200 * self.refresh_time)
 
             except KeyboardInterrupt:
                 break
         sys.exit()
     
+    def update_starting_value(self):
+        component = self.voices[0].signal_chain.get_components_by_class(self.parameter[0])[self.parameter[2] if len(self.parameter) == 3 else 0]
+        self.starting_value = getattr(component, self.parameter_name)
+
     # def set_parameter(self, parameter: list, value):
     #     for voice in self.voices:
     #         components = voice.signal_chain.get_components_by_class(OscillatorGain)
@@ -144,8 +151,11 @@ class Lfo(Oscillator):
         # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
         copy = Lfo(self.sample_rate, self.buffer_size, self.formula, name=self.name, control_tag=self.control_tag)
         copy.active = self.active
-        copy.target = self.target
+        copy.voices = self.voices
         copy.refresh_time = self.refresh_time
+        copy.channel = self.channel
+        copy.parameter = self.parameter
+        copy.variation = self.variation
         return copy
 
 
