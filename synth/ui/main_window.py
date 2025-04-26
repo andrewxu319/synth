@@ -10,7 +10,6 @@ import PyQt6.QtWidgets as QtWidgets
 from .osc_tab import OscTab
 from .fx_tab import FxTab
 from .menu import Menu
-from .test_thread import TestWorker
 
 class Color(QtWidgets.QWidget):
     def __init__(self, color):
@@ -57,22 +56,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
 
-        # Threading stuff
-
-        # worker = TestWorker()
-        # QtCore.QThreadPool.globalInstance().start(worker)
-
-        # self.worker = TestWorker()
-        # self.worker.finished.connect(self.cleanup_thread)
-        # self.worker.start()
-
-        # thread = QtCore.QThread()
-        # worker = TestWorker()
-        # worker.moveToThread(thread)
-        # thread.started.connect(worker.start_thread)
-        # thread.finished.connect(lambda: print("finished"))
-        # thread.start()
-
     def closeEvent(self, event):
         event.accept()
         self.preset_handler.autosave()
@@ -90,13 +73,13 @@ class Ui(threading.Thread):
         window = MainWindow(ui_listener_mailbox, midi_listener, synthesizer, ui_listener, preset_handler)
         window.show()
 
+        # Creating threads for various processes
         self.midi_listener_thread = QtCore.QThread()
         self.midi_listener = midi_listener
         self.midi_listener.moveToThread(self.midi_listener_thread)
         self.midi_listener_thread.started.connect(self.midi_listener.run)
         self.midi_listener_thread.finished.connect(app.exit)
         self.midi_listener_thread.start()
-        # name=f"{port_name}-listener"
 
         self.ui_listener_thread = QtCore.QThread()
         self.ui_listener = ui_listener
