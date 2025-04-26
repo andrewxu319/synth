@@ -6,6 +6,7 @@ from queue import Queue
 from copy import deepcopy
 
 import numpy as np
+from PyQt6 import QtCore
 
 from . import midi
 from . import settings
@@ -22,9 +23,10 @@ from .synthesis.signal.fx.delay import Delay
 from .synthesis.signal.modulators.lfo import Lfo
 from .playback.stream_player import StreamPlayer
 
-class Synthesizer(threading.Thread): # each synth in separate thread??
+class Synthesizer(QtCore.QObject): # each synth in separate thread??
     def __init__(self, sample_rate: int, buffer_size: int, mailbox: Queue, num_voices: int, output_device) -> None: # mailbox = synth_mailbox
-        super().__init__(name="Synthesizer Thread")
+        super().__init__()
+        threading.current_thread().name = "Synthesizer Thread"
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.buffer_size = buffer_size
@@ -142,8 +144,8 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
         self.log.info(f"Control Change: sender {sender}, channel {channel}, CC {cc_number}, value {value}")
         match cc_number:
             # case Implementation.OSC_AMP.value:
-            #     self.set_gain(sender, self.ui.window.osc_tab.focused_osc.number, value)
-            #     self.log.info(f"Gain {self.ui.window.osc_tab.focused_osc.number + 1} set: {value}")
+            #     self.set_gain(sender, self.window.osc_tab.focused_osc.number, value)
+            #     self.log.info(f"Gain {self.window.osc_tab.focused_osc.number + 1} set: {value}")
 
             case Implementation.OSC_1_AMP.value:
                 self.set_gain(sender, 0, value)
@@ -163,28 +165,28 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
             case Implementation.HPF_CUTOFF.value:
                 if sender != "ui":
-                    osc_number = self.ui.window.osc_tab.focused_osc.number
+                    osc_number = self.window.osc_tab.focused_osc.number
                 if sender == "ui":
                     osc_number = int(component.split("_")[1])
                 self.set_hpf_cutoff(sender, osc_number, value)
                 self.log.info(f"hpf {osc_number + 1} cutoff set: {value}")
             case Implementation.HPF_WET.value:
                 if sender != "ui":
-                    osc_number = self.ui.window.osc_tab.focused_osc.number
+                    osc_number = self.window.osc_tab.focused_osc.number
                 if sender == "ui":
                     osc_number = int(component.split("_")[1])
                 self.set_hpf_wet(sender, osc_number, value)
                 self.log.info(f"hpf {osc_number + 1} wet set: {value}")
             case Implementation.LPF_CUTOFF.value:
                 if sender != "ui":
-                    osc_number = self.ui.window.osc_tab.focused_osc.number
+                    osc_number = self.window.osc_tab.focused_osc.number
                 if sender == "ui":
                     osc_number = int(component.split("_")[1])
                 self.set_lpf_cutoff(sender, osc_number, value)
                 self.log.info(f"lpf {osc_number + 1} cutoff set: {value}")
             case Implementation.LPF_WET.value:
                 if sender != "ui":
-                    osc_number = self.ui.window.osc_tab.focused_osc.number
+                    osc_number = self.window.osc_tab.focused_osc.number
                 if sender == "ui":
                     osc_number = int(component.split("_")[1])
                 self.set_lpf_wet(sender, osc_number, value)
@@ -298,14 +300,14 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_velocity_sensitivity(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.performance_section.velocity_sensitivity_dial.setValue(cc_value)
+            self.window.osc_tab.performance_section.velocity_sensitivity_dial.setValue(cc_value)
         for voice in self.voices:
             component = voice.signal_chain.get_components_by_class(VelocityGain)[0]
             component.velocity_sensitivity = cc_value
 
     def set_gain(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.osc_list[number].gain_dial.setValue(cc_value)
+            self.window.osc_tab.osc_list[number].gain_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"oscillator_gain_{number}")
             for component in components:
@@ -313,7 +315,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_hpf_cutoff(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.osc_list[number].hpf_cutoff_dial.setValue(cc_value)
+            self.window.osc_tab.osc_list[number].hpf_cutoff_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
@@ -321,7 +323,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_hpf_wet(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.osc_list[number].hpf_wet_dial.setValue(cc_value)
+            self.window.osc_tab.osc_list[number].hpf_wet_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"hpf_{number}")
             for component in components:
@@ -329,7 +331,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
     def set_lpf_cutoff(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.osc_list[number].lpf_cutoff_dial.setValue(cc_value)
+            self.window.osc_tab.osc_list[number].lpf_cutoff_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
@@ -337,7 +339,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_lpf_wet(self, sender: str, number: int, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.osc_list[number].lpf_wet_dial.setValue(cc_value)
+            self.window.osc_tab.osc_list[number].lpf_wet_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"lpf_{number}")
             for component in components:
@@ -345,7 +347,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_delay_time(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.fx_tab.delay_fx.delay_time_dial.setValue(cc_value)
+            self.window.fx_tab.delay_fx.delay_time_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
@@ -353,7 +355,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
     def set_delay_feedback(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.fx_tab.delay_fx.delay_feedback_dial.setValue(cc_value)
+            self.window.fx_tab.delay_fx.delay_feedback_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
@@ -361,7 +363,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_delay_wet(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.fx_tab.delay_fx.delay_wet_dial.setValue(cc_value)
+            self.window.fx_tab.delay_fx.delay_wet_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"delay")
             for component in components:
@@ -369,7 +371,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_envelope_attack(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.envelope_section.attack_dial.setValue(cc_value)
+            self.window.osc_tab.envelope_section.attack_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
@@ -377,7 +379,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
     def set_envelope_decay(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.envelope_section.decay_dial.setValue(cc_value)
+            self.window.osc_tab.envelope_section.decay_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
@@ -385,7 +387,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
     
     def set_envelope_sustain(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.envelope_section.sustain_dial.setValue(cc_value)
+            self.window.osc_tab.envelope_section.sustain_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
@@ -393,7 +395,7 @@ class Synthesizer(threading.Thread): # each synth in separate thread??
 
     def set_envelope_release(self, sender: str, cc_value: int):
         if sender != "ui":
-            self.ui.window.osc_tab.envelope_section.release_dial.setValue(cc_value)
+            self.window.osc_tab.envelope_section.release_dial.setValue(cc_value)
         for voice in self.voices:
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:

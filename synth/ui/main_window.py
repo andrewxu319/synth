@@ -1,6 +1,7 @@
 import threading
 import logging
 import os
+from time import sleep
 
 import PyQt6.QtCore as QtCore
 import PyQt6.QtGui as QtGui
@@ -9,6 +10,7 @@ import PyQt6.QtWidgets as QtWidgets
 from .osc_tab import OscTab
 from .fx_tab import FxTab
 from .menu import Menu
+from .test_thread import TestWorker
 
 class Color(QtWidgets.QWidget):
     def __init__(self, color):
@@ -21,10 +23,14 @@ class Color(QtWidgets.QWidget):
         self.setPalette(palette)
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, ui_listener_mailbox, preset_handler):
+    def __init__(self, ui_listener_mailbox, midi_listener, synthesizer, ui_listener, preset_handler):
         super().__init__()
         self.log = logging.getLogger(__name__)
         self.ui_listener_mailbox = ui_listener_mailbox
+        # self.midi_listener = midi_listener
+        # self.synthesizer = synthesizer
+        # self.synthesizer.window = self
+        self.ui_listener = ui_listener
         self.preset_handler = preset_handler
 
         self.setWindowTitle("Synth")
@@ -48,7 +54,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Load autosave
         self.preset_handler.load("presets/autosave.json", self)
-    
+
+        self.show()
+
+        # Threading stuff
+
+        # worker = TestWorker()
+        # QtCore.QThreadPool.globalInstance().start(worker)
+
+        # self.worker = TestWorker()
+        # self.worker.finished.connect(self.cleanup_thread)
+        # self.worker.start()
+
+        # thread = QtCore.QThread()
+        # worker = TestWorker()
+        # worker.moveToThread(thread)
+        # thread.started.connect(worker.start_thread)
+        # thread.finished.connect(lambda: print("finished"))
+        # thread.start()
+
     def closeEvent(self, event):
         event.accept()
         self.preset_handler.autosave()
@@ -56,17 +80,37 @@ class MainWindow(QtWidgets.QMainWindow):
         os._exit(1)
 
 class Ui(threading.Thread):
-    def __init__(self, ui_listener_mailbox, preset_handler):
+    def __init__(self, ui_listener_mailbox, midi_listener, synthesizer, ui_listener, preset_handler):
         super().__init__(name="UI Thread")
         self.ui_listener_mailbox = ui_listener_mailbox
         self.preset_handler = preset_handler
-    
-    def run(self):
+
         app = QtWidgets.QApplication([])
 
-        self.window = MainWindow(self.ui_listener_mailbox, self.preset_handler)
-        self.window.show()
+        window = MainWindow(ui_listener_mailbox, midi_listener, synthesizer, ui_listener, preset_handler)
+        window.show()
+
+        self.midi_listener_thread = QtCore.QThread()
+        self.midi_listener = midi_listener
+        self.midi_listener.moveToThread(self.midi_listener_thread)
+        self.midi_listener_thread.started.connect(self.midi_listener.run)
+        self.midi_listener_thread.finished.connect(app.exit)
+        self.midi_listener_thread.start()
+        # name=f"{port_name}-listener"
+
+        self.ui_listener_thread = QtCore.QThread()
+        self.ui_listener = ui_listener
+        self.ui_listener.moveToThread(self.ui_listener_thread)
+        self.ui_listener_thread.started.connect(self.ui_listener.run)
+        self.ui_listener_thread.finished.connect(app.exit)
+        self.ui_listener_thread.start()
+
+        self.synthesizer_thread = QtCore.QThread()
+        self.synthesizer = synthesizer
+        self.synthesizer.window = window
+        self.synthesizer.moveToThread(self.synthesizer_thread)
+        self.synthesizer_thread.started.connect(self.synthesizer.run)
+        self.synthesizer_thread.finished.connect(app.exit)
+        self.synthesizer_thread.start()
 
         app.exec()
-
-        return

@@ -1,5 +1,6 @@
 # FIX LATER
 
+from PyQt6 import QtCore
 import logging
 import threading
 import queue
@@ -7,12 +8,13 @@ import queue
 from ..midi import message_builder as mb
 from ..midi.implementation import Implementation
 
-class UiListener(threading.Thread):
+class UiListener(QtCore.QObject):
     """
     Listens for MIDI messages on a given port and sends them to the synth mailbox.
     """
     def __init__(self, thread_mailbox: queue.Queue, ui_mailbox: queue.Queue, synth_mailbox: queue.Queue):
-        super().__init__(name=f"ui-listener")
+        super().__init__()
+        threading.current_thread().name = "UI Listener Thread"
         self.log = logging.getLogger(__name__)
         self.thread_mailbox = thread_mailbox # The mailbox that receives commands from the main thread. Namely the 'exit' command to shut down gracefully.
         self.ui_mailbox = ui_mailbox # Mailbox to communicate between ui itself and this listener

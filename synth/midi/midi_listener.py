@@ -2,16 +2,18 @@ import logging
 import threading
 import queue
 
+from PyQt6 import QtCore
 import mido
 
 from . import message_builder as mb
 
-class MidiListener(threading.Thread):
+class MidiListener(QtCore.QObject):
     """
     Listens for MIDI messages on a given port and sends them to the synth mailbox.
     """
     def __init__(self, thread_mailbox: queue.Queue, synth_mailbox: queue.Queue, port_name: str):
-        super().__init__(name=f"{port_name}-listener")
+        super().__init__()
+        threading.current_thread().name = "{port_name} Listener Thread"
         self.log = logging.getLogger(__name__)
         self.thread_mailbox = thread_mailbox # The mailbox that receives commands from the main thread. Namely the 'exit' command to shut down gracefully.
         self.synth_mailbox = synth_mailbox # The OUT mailbox where we send the parsed commands to be played by the synth
