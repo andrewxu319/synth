@@ -28,6 +28,14 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
     log.info("toy synth")
 
+    # catching errors https://www.reddit.com/r/learnpython/comments/7or35q/questionpyqt5threading_my_gui_crash_whit_no_error/
+    sys._excepthook = sys.excepthook 
+    def exception_hook(exctype, value, traceback):
+        log.error(exctype, value, traceback)
+        sys._excepthook(exctype, value, traceback) 
+        sys.exit(1)
+    sys.excepthook = exception_hook
+
     available_ports = midi.get_available_controllers()
     log.info(f"Available MIDI ports: {available_ports}")
 

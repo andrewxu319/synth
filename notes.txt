@@ -31,3 +31,21 @@ https://github.com/Akascape/TkDial
 https://www.reddit.com/r/synthesizers/comments/15webnf/i_built_a_4voice_software_synthesizer_with_python/
 
 TO DO: fix adsr save problem
+
+Faulting application name: python3.13.exe, version: 3.13.3150.1013, time stamp: 0x67f53802
+Faulting module name: Qt6Gui.dll, version: 6.9.0.0, time stamp: 0x67e68e58
+Exception code: 0xc0000005
+Fault offset: 0x0000000000067b10
+Faulting process id: 0x573C
+Faulting application start time: 0x1DBB6241D1D33DA
+Faulting application path: C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0\python3.13.exe
+Faulting module path: C:\Users\spagh\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\PyQt6\Qt6\bin\Qt6Gui.dll
+Report Id: 814a51e7-fe1e-4b44-9862-78b1270042df
+Faulting package full name: PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0
+Faulting package-relative application ID: Python
+
+https://forum.qt.io/topic/95717/application-crash-on-startup-error-0xc0000005/5
+
+admin
+
+./configure --prefix=/opt/python/${PYTHON_VERSION} --enable-shared --enable-optimizations --enable-ipv6 LDFLAGS=-Wl,-rpath=/opt/python/${PYTHON_VERSION}/lib,--disable-new-dtags
