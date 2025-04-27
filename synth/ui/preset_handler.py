@@ -124,7 +124,7 @@ class PresetHandler:
             performance = window.osc_tab.performance_section
             performance.velocity_sensitivity_dial.setValue(dictionary["performance"]["velocity_sensitivity"])
         
-        except KeyError as e:
+        except (KeyError, json.decoder.JSONDecodeError) as e:
             self.save(file_path)
             self.log.info(f"{str(e)} setting not found in {file_path}. Default setting has been added to save file.")
             self.load(file_path, window)

@@ -22,7 +22,7 @@ class Gain(Component):
     
     def __next__(self):
         chunk = next(self.subcomponent_iter)
-        return chunk * self.amplitude 
+        return chunk * self.modulated_amplitude 
 
     def __deepcopy__(self, memo):
         # print(f"Gain {self.name} being deep copied!")
@@ -41,7 +41,8 @@ class Gain(Component):
             float_value = float(value)
             if float_value >= 0 and float_value <= 1.9:
                 self._amplitude = float_value
-                self.log.warning(f"{self.control_tag} set to {float_value}")
+                self.modulated_amplitude = float_value
+                self.log.info(f"{self.control_tag} set to {float_value}")
             else:
                 raise ValueError
         except ValueError:

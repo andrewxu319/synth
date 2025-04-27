@@ -21,7 +21,7 @@ class Lfo(Oscillator):
 
         self.channel = 0
         self.parameter = ()
-        self.variation = 0.0
+        self.amount = 0.0
 
         # # do ts later if needed, standardize between midi cc controls and lfo controls
         # self.parameters = {
@@ -59,25 +59,34 @@ class Lfo(Oscillator):
         self.thread.start()
 
     def start_thread(self):
-        self.parameter_name = self.parameter[1]
-        self.update_starting_value()
-
         while True:
             try:
-                value_change = self.variation * (self.formula(self.frequency, self.phase, 1.0, time.time() - self.start_time) + 1.0) # frequency in seconds
-                # self.set_parameter(self.parameter, output)
+                if self.parameter == ():
+                    continue
+                self.amplitude = self.amount * 1.0 # 1.0. FIGURE THIS OUT
+                # print(self.starting_value)
+                value_change = self.formula(self.frequency, self.phase, self.amplitude, time.time() - self.start_time) # frequency in seconds
+                # print(value_change)
                 for voice in self.voices:
-                    component = voice.signal_chain.get_components_by_class(self.parameter[0])[self.parameter[2] if len(self.parameter) == 3 else 0]
-                    setattr(component, self.parameter_name, np.clip(self.starting_value + value_change, 0.0, 1.0)) # change 0.0 and 1.0
-                time.sleep(200 * self.refresh_time)
+                    component = voice.signal_chain.get_components_by_control_tag(self.parameter[0])[0]
+                    setattr(component, "modulated_" + self.parameter[1], np.clip(self.parameter[1] + value_change, 0.0, 1.0)) # change 0.0 and 1.0
+                    # print(component.modulated_amplitude)
 
             except KeyboardInterrupt:
                 break
+            time.sleep(200 * self.refresh_time)
         sys.exit()
     
     def update_starting_value(self):
-        component = self.voices[0].signal_chain.get_components_by_class(self.parameter[0])[self.parameter[2] if len(self.parameter) == 3 else 0]
-        self.starting_value = getattr(component, self.parameter_name)
+        if self.parameter != ():
+            component = self.voices[0].signal_chain.get_components_by_control_tag(self.parameter[0])[0]
+            self.starting_value = getattr(component, self.parameter[1])
+            print(self.voices[0].signal_chain.get_components_by_control_tag("oscillator_gain_0")[0].amplitude)
+            print(self.parameter) # EVERYTHING BREAKS AAAAAAAAAa
+            import time
+            time.sleep(1)
+            print(self.voices[0].signal_chain.get_components_by_control_tag("oscillator_gain_0")[0].amplitude)
+
 
     # def set_parameter(self, parameter: list, value):
     #     for voice in self.voices:
@@ -146,6 +155,40 @@ class Lfo(Oscillator):
                 self.log.info(f"Lfo active set to {self.active}")
         except:
             self.log.error(f"Unable to set with value {value}, type {type(value)}")
+    
+    @property
+    def shape(self):
+        return self._shape
+    @shape.setter
+    def shape(self, value):
+        self._shape = value
+        self.log.info(f"LFO shape set to {value}")
+
+    @property
+    def parameter(self):
+        return self._parameter
+    @parameter.setter
+    def parameter(self, value):
+        self._parameter = value
+        # self.update_starting_value()
+        self.log.info(f"LFO parameter set to {value}")
+
+    @property
+    def frequency(self):
+        return self._frequency
+    @frequency.setter
+    def frequency(self, value):
+        self._frequency = value
+        self.log.info(f"LFO frequency set to {value}")
+    
+    @property
+    def amount(self):
+        return self._amount
+    @amount.setter
+    def amount(self, value):
+        self._amount = value
+        # print(self.amplitude)
+        self.log.info(f"LFO amount set to {value}")
 
     def __deepcopy__(self, memo):
         # logging.info(f"Deep copying oscillator {self.name} with active {self.active}")
@@ -155,7 +198,7 @@ class Lfo(Oscillator):
         copy.refresh_time = self.refresh_time
         copy.channel = self.channel
         copy.parameter = self.parameter
-        copy.variation = self.variation
+        copy.amount = self.amount
         return copy
 
 

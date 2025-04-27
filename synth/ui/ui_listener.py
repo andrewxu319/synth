@@ -46,8 +46,8 @@ class UiListener(QtCore.QObject):
                         control = Implementation[msg["control_implementation"]].value
                         ctrl_msg = mb.builder().sender("ui").control_change().on_channel(msg["channel"]).with_component(msg["component"]).with_cc_number(control).with_value(msg["value"]).build()
                         self.synth_mailbox.put(ctrl_msg)
-                    case "set_active":
-                        ctrl_msg = mb.builder().sender("ui").set_active().on_channel(msg["channel"]).with_component(msg["component"]).with_value(msg["value"]).build()
+                    case "ui_message":
+                        ctrl_msg = mb.builder().sender("ui").ui_message().name(msg["name"]).on_channel(msg["channel"]).with_component(msg["component"]).with_value(msg["value"]).build()
                         self.synth_mailbox.put(ctrl_msg)
                     case "stop":
                         self.log.info("Received midi STOP message")

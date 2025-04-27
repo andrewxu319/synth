@@ -52,7 +52,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMenuBar(menu)
 
         # Load autosave
-        self.preset_handler.load("presets/autosave.json", self)
+        try:
+            self.preset_handler.load("presets/autosave.json", self)
+        except Exception as e: # GIVE AN EXCEPTION LATER
+            self.log.error(e)
 
         self.show()
 

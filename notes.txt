@@ -49,3 +49,8 @@ https://forum.qt.io/topic/95717/application-crash-on-startup-error-0xc0000005/5
 admin
 
 ./configure --prefix=/opt/python/${PYTHON_VERSION} --enable-shared --enable-optimizations --enable-ipv6 LDFLAGS=-Wl,-rpath=/opt/python/${PYTHON_VERSION}/lib,--disable-new-dtags
+
+cc control lag
+
+make sure you only communicate between threads using signals and slots. IOW, if object A is in another thread, don't call one of its methods directly from your main thread (even in a lambda or callback function). Keep all communication strictly signal->slot.
+https://www.reddit.com/r/learnpython/comments/c4jwlk/is_a_queue_required_if_using_signals_and_slots_to/

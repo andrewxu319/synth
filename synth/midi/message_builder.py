@@ -64,8 +64,8 @@ class CommandBuilder(MessageBuilder):
         self.message += " control_change"
         return CCParameterBuilder(self.message)
     
-    def set_active(self):
-        self.message += " set_active"
+    def ui_message(self):
+        self.message += " ui_message"
         return UIParameterBuilder(self.message)
 
 class NoteParameterBuilder(MessageBuilder):
@@ -162,6 +162,11 @@ class UIParameterBuilder(MessageBuilder):
         super().__init__()
         self.message = message_base
   
+    def name(self, value):
+        self.message += f" -n {value}"
+
+        return UIParameterBuilder(self.message)
+
     def on_channel(self, channel):
         try:
             int_val = int(channel)

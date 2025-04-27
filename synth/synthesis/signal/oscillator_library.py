@@ -30,7 +30,7 @@ class OscillatorLibrary():
                 "name": "TriangleWaveOscillator",
                 "control_tag": "osc_3",
                 "formula": (lambda frequency, phase, amplitude, t:
-                            (abs(amplitude * (t * frequency - np.floor(t * frequency + 0.5))) - 0.5) * 4 + 1)
+                            abs(amplitude * (t * frequency - np.floor(t * frequency + 0.5))) * 4 - amplitude)
             },
             {
                 "name": "NoiseOscillator",

@@ -6,6 +6,7 @@ import PyQt6.QtWidgets as QtWidgets
 
 from .widgets.checkbox import CheckBox
 from .widgets.dial import Dial
+from .widgets.combobox import ComboBox
 from .widgets.color import Color
 
 class OscillatorSection(QtWidgets.QWidget):
@@ -81,7 +82,8 @@ class OscillatorSection(QtWidgets.QWidget):
 
     def set_active(self, state):
         self.ui_listener_mailbox.put({
-            "type": "set_active",
+            "type": "ui_message",
+            "name": "set_active",
             "channel": 0,
             "component": f"osc_{self.number}",
             "value": state == 2 # use midi cc instead?
@@ -189,7 +191,8 @@ class EnvelopeSection(QtWidgets.QWidget):
     
     def set_active(self, state):
         self.ui_listener_mailbox.put({
-            "type": "set_active",
+            "type": "ui_message",
+            "name": "set_active",
             "channel": 0,
             "component": "envelope",
             "value": state == 2 # use midi cc instead?
@@ -234,49 +237,119 @@ class EnvelopeSection(QtWidgets.QWidget):
 class LfoSection(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
         super().__init__()
+        self.ui_listener_mailbox = ui_listener_mailbox
         self.log = logging.getLogger(__name__)
 
-        layout = QtWidgets.QHBoxLayout()
+        self.focused_osc = 0
 
-        self.attack_dial = Dial()
-        self.attack_dial.setRange(0, 127)
-        self.attack_dial.setSingleStep(1)
-        self.attack_dial.setMinimumSize(1,1)
-        self.attack_dial.valueChanged.connect(self.set_attack)
+        self.parameters = {
+            "": (), # none
+            "Gain (Current Osc)": (f"oscillator_gain_{self.focused_osc}", "amplitude"),
+            "HPF Cutoff (Current Osc)": (f"hpf_{self.focused_osc}", "cutoff"),
+            "HPF Wet (Current Osc)": (f"hpf_{self.focused_osc}", "wet"),
+            "LPF Cutoff (Current Osc)": (f"lpf_{self.focused_osc}", "cutoff"),
+            "LPF Wet (Current Osc)": (f"lpf_{self.focused_osc}", "wet"),
+            "Delay Time": ("delay", "delay_time"),
+            "Delay Feedback": ("delay", "feedback"),
+            "Delay Wet": ("delay", "wet"),
+            "Attack": ("envelope", "attack"),
+            "Decay": ("envelope", "decay"),
+            "Sustain": ("envelope", "sustain"),
+            "Release": ("envelope", "release"),
+            "Velocity Sensitivity": ("velocity_gain", "velocity_sensitivity")
+        }
 
-        self.decay_dial = Dial()
-        self.decay_dial.setRange(0, 127)
-        self.decay_dial.setSingleStep(1)
-        self.decay_dial.setMinimumSize(1,1)
-        self.decay_dial.valueChanged.connect(self.set_decay)
+        layout = QtWidgets.QGridLayout()
 
-        self.sustain_dial = Dial()
-        self.sustain_dial.setRange(0, 127)
-        self.sustain_dial.setSingleStep(1)
-        self.sustain_dial.setMinimumSize(1,1)
-        self.sustain_dial.valueChanged.connect(self.set_sustain)
+        # shape, parameter, frequency, amount. ACTIVE CHECKBOX
 
-        self.release_dial = Dial()
-        self.release_dial.setRange(0, 127)
-        self.release_dial.setSingleStep(1)
-        self.release_dial.setMinimumSize(1,1)
-        self.release_dial.valueChanged.connect(self.set_release)
+        self.shape_dropdown = ComboBox()
+        self.shape_dropdown.addItems(["Sine", "Square", "Sawtooth", "Triangle"])
+        self.shape_dropdown.currentIndexChanged.connect(self.set_shape)
 
-        layout.addWidget(QtWidgets.QLabel(text="Envelope"))
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Attack:"))
-        layout.addWidget(self.attack_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Decay:"))
-        layout.addWidget(self.decay_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Sustain:"))
-        layout.addWidget(self.sustain_dial)
-        layout.addStretch()
-        layout.addWidget(QtWidgets.QLabel(text=f"Release:"))
-        layout.addWidget(self.release_dial)
+        self.parameter_dropdown = ComboBox()
+        self.parameter_dropdown.addItems(self.parameters.keys())
+        self.parameter_dropdown.currentTextChanged.connect(self.set_parameter)
+
+        self.frequency_dial = Dial()
+        self.frequency_dial.setRange(0, 127)
+        self.frequency_dial.setSingleStep(1)
+        self.frequency_dial.setMinimumSize(1,1)
+        self.frequency_dial.valueChanged.connect(self.set_frequency)
+
+        self.amount_dial = Dial()
+        self.amount_dial.setRange(0, 127)
+        self.amount_dial.setSingleStep(1)
+        self.amount_dial.setMinimumSize(1,1)
+        self.amount_dial.valueChanged.connect(self.set_amount)
+
+        layout.addWidget(QtWidgets.QLabel(text="LFO"), 0, 0)
+        attack_layout = QtWidgets.QHBoxLayout()
+        attack_layout.addWidget(QtWidgets.QLabel(text=f"Shape:"))
+        attack_layout.addWidget(self.shape_dropdown)
+        layout.addLayout(attack_layout, 1, 0)
+
+        decay_layout = QtWidgets.QHBoxLayout()
+        decay_layout.addWidget(QtWidgets.QLabel(text=f"Parameter:"))
+        decay_layout.addWidget(self.parameter_dropdown)
+        layout.addLayout(decay_layout, 1, 1)
+
+        sustain_layout = QtWidgets.QHBoxLayout()
+        sustain_layout.addWidget(QtWidgets.QLabel(text=f"Frequency:"))
+        sustain_layout.addWidget(self.frequency_dial)
+        layout.addLayout(sustain_layout, 2, 0)
+
+        release_layout = QtWidgets.QHBoxLayout()
+        release_layout.addWidget(QtWidgets.QLabel(text=f"Amount:"))
+        release_layout.addWidget(self.amount_dial)
+        layout.addLayout(release_layout, 2, 1)
 
         self.setLayout(layout)
+
+    def set_active(self, state):
+        self.ui_listener_mailbox.put({
+            "type": "ui_message",
+            "name": "set_active",
+            "channel": 0,
+            "component": "lfo",
+            "value": state == 2 # use midi cc instead?
+        })
+    
+    def set_shape(self, index):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0,
+            "component": "lfo",
+            "control_implementation": "LFO_SHAPE",
+            "value": index # use midi cc instead?
+        })
+
+    def set_parameter(self, text):
+        self.ui_listener_mailbox.put({
+            "type": "ui_message",
+            "name": "lfo_parameter",
+            "channel": 0,
+            "component": "lfo",
+            "value": f"{self.parameters[text][0]}.{self.parameters[text][1]}" # use midi cc instead?
+        })
+
+    def set_frequency(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": "lfo",
+            "control_implementation": "LFO_FREQUENCY",
+            "value": value
+        })
+
+    def set_amount(self, value):
+        self.ui_listener_mailbox.put({
+            "type": "control_change",
+            "channel": 0, # doesnt rly matter
+            "component": "lfo",
+            "control_implementation": "LFO_AMOUNT",
+            "value": value
+        })
 
 class PerformanceSection(QtWidgets.QWidget):
     def __init__(self, ui_listener_mailbox):
@@ -346,7 +419,7 @@ class OscTab(QtWidgets.QWidget):
         self.envelope_section = EnvelopeSection(self.ui_listener_mailbox)
         bottom_section.addWidget(self.envelope_section, 2)
 
-        self.lfo_section = Color("red")
+        self.lfo_section = LfoSection(self.ui_listener_mailbox)
         bottom_section.addWidget(self.lfo_section, 2)
 
         self.performance_section = PerformanceSection(self.ui_listener_mailbox)
@@ -362,6 +435,10 @@ class OscTab(QtWidgets.QWidget):
         self.focused_osc.focus = True
         self.focused_osc.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
         self.focused_osc.setStyleSheet('background-color: #fcf6cc')
+        try:
+            self.lfo_section.focused_osc = self.focused_osc
+        except AttributeError:
+            pass
 
         remaining_numbers = list(range(5))
         remaining_numbers.pop(number)

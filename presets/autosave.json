@@ -2,13 +2,13 @@
     "oscillators": {
         "active": [
             true,
-            true,
+            false,
             false,
             false,
             false
         ],
         "oscillator_gain": [
-            1.0,
+            0.39370078740157477,
             1.0,
             1.0,
             1.0,
@@ -59,7 +59,7 @@
     },
     "fx": {
         "delay": {
-            "active": true,
+            "active": false,
             "time": 0.49727481603622437,
             "feedback": 0.49971131112263734,
             "wet": 0.49606299212598426
@@ -68,13 +68,13 @@
     "modulators": {
         "envelope": {
             "attack": [
-                0.29657989740371704
+                0.0009999871253967285
             ],
             "decay": [
                 0.6036270260810852
             ],
             "sustain": [
-                0.10236220472440945
+                1.0
             ],
             "release": [
                 0.4982748031616211

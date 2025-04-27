@@ -38,12 +38,12 @@ class Synthesizer(QtCore.QObject): # each synth in separate thread??
         signal_prototype = self.set_up_signal_chain()
         self.voices = [Voice(deepcopy(signal_prototype)) for _ in range(num_voices)]
 
-        # lfo = Lfo(self.sample_rate, self.buffer_size, self.voices)
-        # lfo.formula = self.oscillator_library[3]["formula"]
-        # lfo.parameter = [OscillatorGain, "amplitude", 0]
-        # lfo.frequency = 1.0
-        # lfo.variation = 0.5
-        # lfo.start()
+        self.lfo = Lfo(self.sample_rate, self.buffer_size, self.voices)
+        self.lfo.formula = self.oscillator_library[3]["formula"]
+        self.lfo.parameter = ()
+        self.lfo.frequency = 1.0
+        self.lfo.amount = 0.3
+        self.lfo.start()
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.buffer_size, self.generator(), output_device)
@@ -131,12 +131,12 @@ class Synthesizer(QtCore.QObject): # each synth in separate thread??
                     int_cc_number = cc_number
                 int_value = int(value)
                 self.control_change_handler(sender, int_channel, component, int_cc_number, int_value)
-
-                # for voice in self.voices:
-                #     for lfo in voice.signal_chain.get_components_by_class(Lfo):
-                #         lfo.update_starting_value()
-            case [sender, "set_active", "-c", channel, "-o", component, "-v", value]:
-                self.set_active(sender, int(channel), component, value=="True")
+            case [sender, "ui_message", "-n", name, "-c", channel, "-o", component, "-v", value]:
+                match name:
+                    case "set_active":
+                        self.set_active(sender, int(channel), component, value=="True")
+                    case "lfo_parameter":
+                        self.set_lfo_parameter(sender, int(channel), component, value)
             case _:
                 self.log.info(f"Unknown MIDI message: {message}")
     
@@ -214,6 +214,19 @@ class Synthesizer(QtCore.QObject): # each synth in separate thread??
             case Implementation.ENV_RELEASE.value:
                 self.set_envelope_release(sender, value)
                 self.log.info(f"Envelope release set: {value}")
+
+            case Implementation.LFO_SHAPE.value:
+                self.set_lfo_shape(sender, value)
+                self.log.info(f"LFO shape set: {value}")
+            case Implementation.LFO_PARAMETER.value:
+                self.set_lfo_parameter(sender, value)
+                self.log.info(f"LFO parameter set: {value}")
+            case Implementation.LFO_FREQUENCY.value:
+                self.set_lfo_frequency(sender, value)
+                self.log.info(f"LFO frequency set: {value}")
+            case Implementation.LFO_AMOUNT.value:
+                self.set_lfo_amount(sender, value)
+                self.log.info(f"LFO amount set: {value}")
             
             case Implementation.VEL_SENSITIVITY.value:
                 self.set_velocity_sensitivity(sender, value)
@@ -400,3 +413,24 @@ class Synthesizer(QtCore.QObject): # each synth in separate thread??
             components = voice.signal_chain.get_components_by_control_tag(f"envelope")
             for component in components:
                 component.release = settings.envelope_release_values[cc_value]
+
+    def set_lfo_shape(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.window.osc_tab.lfo_section.shape_dropdown.setCurrentIndex(cc_value)
+        self.lfo.formula = self.oscillator_library[cc_value]["formula"]
+    
+    def set_lfo_parameter(self, sender: str, channel: int, component: str, value: str):
+        parameter_tuple = tuple(value.split("."))
+        # if sender != "ui":
+        #     self.window.osc_tab.lfo_section.parameter_dropdown.setCurrentText(tuple[0]) FIXFIXFIX
+        self.lfo.parameter = parameter_tuple
+    
+    def set_lfo_frequency(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.window.osc_tab.lfo_section.frequency_dial.setValue(cc_value)
+        self.lfo.frequency = settings.lfo_frequency_values[cc_value]
+    
+    def set_lfo_amount(self, sender: str, cc_value: int):
+        if sender != "ui":
+            self.window.osc_tab.lfo_section.amount_dial.setValue(cc_value)
+        self.lfo.amount = settings.lfo_amount_values[cc_value] # A PERCENTAGE

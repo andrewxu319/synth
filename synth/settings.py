@@ -17,6 +17,8 @@ envelope_attack_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, d
 envelope_decay_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
 envelope_sustain_values = np.linspace(0, 1, 128)
 envelope_release_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.499 # 0 to about 2 seconds
+lfo_frequency_values = np.geomspace(0.1, 20, 128, endpoint=True, dtype=np.float32)
+lfo_amount_values = np.linspace(0, 0.5, 128) # percentage 0 to 50
 delay_time_values = 0.5 * np.logspace(0, 2.3, 128, endpoint=True, base=2, dtype=np.float32) - 0.5 # 0 to about 2 seconds
 delay_feedback_values = (np.logspace(0, 1, 128, endpoint=True, base=10) - 1) / 9 # 0 to 1
 delay_wet_values = np.linspace(0, 1, 128)
